@@ -5,7 +5,7 @@ app = Flask('grabarz')
 #: read config depended on instance type
 with open("../__instance__.txt") as f:
     instance = f.read()            
-app.config.from_object('config.%sConfig' % instance.capitalize())
+app.config.from_object('config.%sConfig' % instance.capitalize().strip())
 
 from views.layout import layout
 app.register_module(layout)
