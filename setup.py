@@ -12,5 +12,6 @@ setup(
         'pyquery',
         'dateutils',
         'celery',
+        'decorator',
     ]
 )

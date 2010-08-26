@@ -1,7 +1,16 @@
 ## -*- coding: utf-8 -*-
 
-DATABASE = '../komornik.db'
-SECRET_KEY = '23523626247274742'
-USERNAME = 'admin'
-PASSWORD = 'admin'
-DEBUG = True
+class Config(object):
+    SECRET_KEY = '^&@&*$@#BRKFJ*(@#RUY(*#FH#YUBG#*F@&R*G#GF@&*#FG'
+    
+class DevelopmentConfig(Config):
+    DATABASE = '../db/prod.db'
+    DEBUG = True    
+
+class ProductionConfig(Config):
+    DEBUG = False
+    DATABASE = '../db/dev.db'
+
+
+    
+
