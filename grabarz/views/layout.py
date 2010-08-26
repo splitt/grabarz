@@ -8,7 +8,7 @@ layout = Module(__name__)
 @layout.route('/layout/config')
 @jsonify
 def config():
-    return beans.Config(
+    return Config(
         title="Komornik",
         default_errorwindowtitle="Wystąpił błąd aplikacji",
         debug=True,
@@ -19,7 +19,7 @@ def config():
 @layout.route('/layout/slots')
 @jsonify
 def slots():
-    return beans.Desktop(
+    return Desktop(
         heading='',
         menu_items=[
             dict(
@@ -54,21 +54,21 @@ def slots():
 
         slots=[
              dict(
-                 id='dashboard',
+                 id='menu',
                  split=True,
-                 data=['WEST', 800],
+                 data=['WEST', 200],
                  margins=[5, 5, 5, 5],
                  scroll='NONE',
-                 url="/dashboard/show",
+                 url="/layout/menu",
              ),
 
              dict(
-                 id='history',
+                 id='content',
                  split=True,
                  data=['CENTER', 100, 100, 100],
                  margins=[5, 5, 5, 5],
                  scroll='AUTO',
-                 url="/history/show",
+                 url="/layout/content",
              ),
         ]
     )
@@ -80,11 +80,21 @@ def init():
     return MultiLoader()
 
 
-@layout.route('/layout/null')
+
+@layout.route('/layout/content')
 @jsonify
-def null():
+def content():
     return HTML(
         heading=None,
-        content="",
+        content="sparta!!! " * 1000,
+        scroll="NONE",
+    )
+
+@layout.route('/layout/menu')
+@jsonify
+def menu():
+    return HTML(
+        heading=None,
+        content="sparta!!! " * 1000,
         scroll="NONE",
     )

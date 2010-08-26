@@ -17,7 +17,7 @@ fixkeys = decorator(fixkeys)
 
 
 def jsonify(func, *args, **kwargs):
-    """ Transform dict into json and returns it as response """
+    """ Transform dict into json and returns it as response """    
     rv = func(*args, **kwargs)
     json = simplejson.dumps(rv)
     response = make_response(json)
