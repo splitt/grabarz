@@ -2,7 +2,7 @@
 from flask import Flask, g, session, request, redirect, make_response
 app = Flask('grabarz')
 
-#: read config depended on instance type
+#: Read config depended on instance type
 with open("../__instance__.txt") as f:
     instance = f.read()            
 app.config.from_object('config.%sConfig' % instance.capitalize().strip())
