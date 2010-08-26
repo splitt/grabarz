@@ -1,5 +1,8 @@
 ## -*- coding: utf-8 -*-
+import simplejson
 from decorator import decorator
+
+from flask import make_response
 
 def fixkeys(func, *args, **kwargs):    
     """ Decorator changing '_' for '-' in dictionary keys. """
@@ -11,3 +14,13 @@ def fixkeys(func, *args, **kwargs):
             del foo[k]
     return foo
 fixkeys = decorator(fixkeys)
+
+
+def jsonify(func, *args, **kwargs):
+    """ Transform dict into json and returns it as response """
+    rv = func(*args, **kwargs)
+    json = simplejson.dumps(rv)
+    response = make_response(json)
+    response.headers['Content-Type'] = 'application/json'
+    return response
+jsonify = decorator(jsonify)

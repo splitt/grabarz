@@ -13,5 +13,6 @@ setup(
         'dateutils',
         'celery',
         'decorator',
+        'simplejson',
     ]
 )

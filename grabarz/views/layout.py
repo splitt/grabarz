@@ -1,12 +1,12 @@
 ## -*- coding: utf-8 -*-
 from flask import Module
-from grabarz.lib import beans
-from grabarz.lib.utils import beanify, fixkeys
+from grabarz.lib.beans import Config, Desktop, MultiLoader, HTML
+from grabarz.lib.utils import jsonify, fixkeys
 
 layout = Module(__name__)
 
 @layout.route('/layout/config')
-@fixkeys()
+@jsonify
 def config():
     return beans.Config(
         title="Komornik",
@@ -17,6 +17,7 @@ def config():
     )
 
 @layout.route('/layout/slots')
+@jsonify
 def slots():
     return beans.Desktop(
         heading='',
@@ -74,24 +75,15 @@ def slots():
 
 
 @layout.route('/layout/init')
-@beanify("multiloader")
+@jsonify
 def init():
-    return []
-
-@layout.route('/layout/logo')
-@beanify("html")
-def logo():
-    return dict(
-        heading=None,
-        scroll="NONE",
-        content='<img src="/static/_komornik.jpg"/>',
-    )
+    return MultiLoader()
 
 
 @layout.route('/layout/null')
-@beanify("html")
+@jsonify
 def null():
-    return dict(
+    return HTML(
         heading=None,
         content="",
         scroll="NONE",

@@ -69,6 +69,12 @@ class Column(Bean):
 class Row(Bean):
     pass
 
+class Config(Bean):
+    __type__ = 'config'
+    
+class Desktop(Bean):
+    __type__ = 'desktop'    
+
 
 class Fieldset(Bean):
     type = "fieldset"
