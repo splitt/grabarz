@@ -1,7 +1,7 @@
 ## -*- coding: utf-8 -*-
 from copy import deepcopy
 from flask import request
-from komornik.lib.utils import wrapped
+from grabarz.lib.utils import wrapped
 
 class Conditional(object):
     """ Przechowuje obiekt + warunek konieczny, aby obiekt był zwrócony. """

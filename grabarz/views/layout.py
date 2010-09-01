@@ -9,7 +9,7 @@ layout = Module(__name__)
 @jsonify
 def config():
     return Config(
-        title="Komornik",
+        title="grabarz",
         default_errorwindowtitle="Wystąpił błąd aplikacji",
         debug=True,
         theme="olive",

@@ -24,3 +24,22 @@ def jsonify(func, *args, **kwargs):
     response.headers['Content-Type'] = 'application/json'
     return response
 jsonify = decorator(jsonify)
+
+
+def wrap(type, result):
+    return dict(
+        type=type,
+        result=result,
+    )
+
+
+def wrapped(type, *args, **kwargs):
+    """ Dekorator, który zawija slownik pod dany klucz
+    
+    @param type: str
+    @param result: dict
+    """
+    def call(func, *args, **kwargs):
+        return wrap(type, func(*args, **kwargs))
+    return decorator(call)
+
