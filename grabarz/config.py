@@ -7,6 +7,6 @@ class DevelopmentConfig(Config):
     DATABASE = '../db/prod.db'
     DEBUG = True    
 
-class ProductionConfig(Config):
-    DEBUG = False
+class ProductionConfig(Config):    
     DATABASE = '../db/dev.db'
+    DEBUG = False

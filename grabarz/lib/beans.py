@@ -76,6 +76,13 @@ class Desktop(Bean):
     __type__ = 'desktop'    
 
 
+class Menu(Bean):
+    __type__ = 'menu'
+    
+class Actions(Bean):
+    __type__ = 'actions'  
+
+
 class Fieldset(Bean):
     type = "fieldset"
     fieldsetheading = None
@@ -131,9 +138,8 @@ class Window(Bean):
     __type__ = 'window'
     replace = True
     heading = None
-    width = 500,
+    width = 500
     height = 300
-    object = None
     slotname = "window"
 
 
