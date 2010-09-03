@@ -1,0 +1,10 @@
+#Fri Sep 03 15:27:39 CEST 2010
+eclipse.preferences.version=1
+encoding//grabarz/__init__.py=utf-8
+encoding//grabarz/config.py=utf-8
+encoding//grabarz/lib/beans.py=utf-8
+encoding//grabarz/lib/tasks.py=utf-8
+encoding//grabarz/lib/torrent.py=utf-8
+encoding//grabarz/lib/utils.py=utf-8
+encoding//grabarz/views/layout.py=utf-8
+encoding//grabarz/views/movies.py=utf-8

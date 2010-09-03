@@ -1,7 +1,8 @@
 ## -*- coding: utf-8 -*-
-from flask import Module
+from flask import Module, session
 from grabarz.lib.beans import (Config, Desktop, MultiLoader, HTML, Menu, 
-                               Actions, Composite, Window)
+                               Actions, Composite, Window, TimerRegister, 
+                               Infobox)
 from grabarz.lib.utils import jsonify, fixkeys
 from grabarz import app
 
@@ -224,4 +225,27 @@ def rtorrent():
 @layout.route('/layout/init')
 @jsonify
 def init():
-    return MultiLoader()
+    session['messages'] = []
+    
+    return TimerRegister(
+        name = 'messages',
+        action = '/layout/messages',
+        interval =  3000,
+        slot = 'internal',
+                        
+    )
+
+
+
+@layout.route('/layout/messages')
+@jsonify
+def messages():
+    rv =  Composite(
+        *[Infobox(
+            title = info[0],
+            text = info[1],
+            duration = 5000,
+            ) for info in session['messages']]                     
+    )
+    session['messages'] = []
+    return rv

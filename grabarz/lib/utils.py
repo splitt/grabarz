@@ -2,7 +2,7 @@
 import simplejson
 from decorator import decorator
 
-from flask import make_response
+from flask import make_response, session
 
 def fixkeys(func, *args, **kwargs):    
     """ Decorator changing '_' for '-' in dictionary keys. """
@@ -43,3 +43,5 @@ def wrapped(type, *args, **kwargs):
         return wrap(type, func(*args, **kwargs))
     return decorator(call)
 
+def set_flash(text, title = 'Info'):
+    session['messages'].append([title, text])

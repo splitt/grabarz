@@ -1,7 +1,7 @@
 ## -*- coding: utf-8 -*-
 from __future__ import with_statement
 import os
-from flask import Flask, g, session, request, redirect, make_response
+from flask import Flask, g, session, request, redirect, make_response, session
 
 app = Flask('grabarz')
 

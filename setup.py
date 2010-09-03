@@ -17,5 +17,9 @@ setup(
 	    'imdbpy',
         'ini',
         'mechanize',
+        'multiprocessing',
+        'ghettoq',
+        'redis',
+        'django',
     ]
 )

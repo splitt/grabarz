@@ -72,6 +72,9 @@ class Row(Bean):
 class Config(Bean):
     __type__ = 'config'
     
+class TimerRegister(Bean):
+    __type__ = 'timer-register'
+    
 class Desktop(Bean):
     __type__ = 'desktop'    
 
