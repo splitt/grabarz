@@ -103,8 +103,8 @@ def left():
             
                              
             dict(
-                 url = '/',
-                 slot = 'CONTENT',
+                 url = '/movies/add',
+                 slot = 'internal',
                  id = 'aaa',
                  title = 'dodaj',              
                  icon = "icon-add",   

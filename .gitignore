@@ -5,3 +5,5 @@
 .project
 .pydevproject
 __instance__.txt
+/db
+/env

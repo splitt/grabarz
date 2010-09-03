@@ -14,5 +14,8 @@ setup(
         'celery',
         'decorator',
         'simplejson',
+	    'imdbpy',
+        'ini',
+        'mechanize',
     ]
 )
