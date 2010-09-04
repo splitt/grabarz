@@ -64,7 +64,7 @@ def slots():
                  data=['CENTER', 100, 100, 100],
                  margins=[5, 5, 5, 5],
                  scroll='AUTO',
-                 url="/layout/content",
+                 url="/movies/ready_to_watch",
              ),
         ]
     )
@@ -95,7 +95,7 @@ def left():
         Filmy = [
                  
             dict(
-                 url = '/',
+                 url = '/movies/ready_to_watch',
                  slot = 'CONTENT',
                  id = 'aaa',
                  title = 'gotowe',              
@@ -148,7 +148,7 @@ def left():
             ),
                                  
             dict(
-                 url = '/',
+                 url = '/movies/ready_to_watch',
                  slot = 'CONTENT',
                  id = 'aaa',
                  title = 'gotowe',              

@@ -1,0 +1,32 @@
+div.movie_row *{
+	height:163px !important;
+	white-space:normal !important;	
+	text-align: center;
+	vertical-align: middle !important;
+}
+
+div.movie_row .x-grid3-col-title{
+    text-align: justify;
+}
+
+div.movie_row .title{
+    font-size: 20px;
+    font-weight: bold;
+}
+
+div.movie_row .average{
+    font-size: 13px;
+    font-weight: bold;
+}
+
+div.movie_row .x-grid3-td-ratings{
+    text-align: left !important;
+}
+
+div.movie_row img{
+	height:auto !important;
+}
+
+div.movie_row.x-grid3-row-over{
+	background-image: none;
+}

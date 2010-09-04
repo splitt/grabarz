@@ -11,15 +11,9 @@ setup(
         'Flask-SQLAlchemy',
         'pyquery',
         'dateutils',
-        'celery',
         'decorator',
         'simplejson',
 	    'imdbpy',
-        'ini',
         'mechanize',
-        'multiprocessing',
-        'ghettoq',
-        'redis',
-        'django',
     ]
 )
