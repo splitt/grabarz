@@ -10,5 +10,6 @@
 <pydev_pathproperty name="org.python.pydev.PROJECT_EXTERNAL_SOURCE_PATH">
 <path>/home/mzajonz/workspace/grabarz/env/lib/python2.6/site-packages/anyjson-0.2.4-py2.6.egg</path>
 <path>/home/mzajonz/workspace/grabarz/env/lib/python2.6/site-packages/Flask-0.6-py2.6.egg</path>
+<path>/home/mzajonz/workspace/grabarz/env/lib/python2.6/site-packages/mechanize</path>
 </pydev_pathproperty>
 </pydev_project>

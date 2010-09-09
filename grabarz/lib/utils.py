@@ -1,8 +1,53 @@
 ## -*- coding: utf-8 -*-
+from datetime import datetime
+from threading import Thread
+from decorator import decorator
+from functools import wraps
+import urllib2
 import simplejson
 from decorator import decorator
+from flask import make_response, session, request, g, session
 
-from flask import make_response, session
+from grabarz import app
+from grabarz.lib import beans
+
+class HydraLog(object):
+    """ Logs to normal application logger + extra logger to specific 
+    application window """
+        
+    def __init__(self, window_slot, initial_message=""):
+        
+                
+        session['hydra_loggers'][window_slot] = initial_message
+        self.window_slot = window_slot
+        
+        session['updates'].append(
+            beans.Window(
+                slotname = self.window_slot,
+                url = '/layout/logger_window/slot_id=%s' % window_slot
+            )                                
+        )
+        
+    def emit(self, message):        
+        app.logger.debug(message)
+        session['hydra_loggers'][self.window_slot] += message
+        session['updates'].append(
+            beans.Reload(
+                slot = self.window_slot,                   
+            )
+        )        
+         
+
+def download(url, local_name):
+    """Copy the contents of a file from a given URL
+    to a local file.
+    """
+    web_file = urllib2.urlopen(url)
+    local_file = open(local_name, 'w')
+    local_file.write(web_file.read())
+    web_file.close()
+    local_file.close()
+
 
 def fixkeys(func, *args, **kwargs):    
     """ Decorator changing '_' for '-' in dictionary keys. """
@@ -26,22 +71,14 @@ def jsonify(func, *args, **kwargs):
 jsonify = decorator(jsonify)
 
 
-def wrap(type, result):
-    return dict(
-        type=type,
-        result=result,
-    )
-
-
-def wrapped(type, *args, **kwargs):
-    """ Dekorator, który zawija slownik pod dany klucz
+def post2get():
+    """ Returns GET arguments from post MultiDict """
+    try:
+        request.form
+    except(AttributeError):
+        return ''
     
-    @param type: str
-    @param result: dict
-    """
-    def call(func, *args, **kwargs):
-        return wrap(type, func(*args, **kwargs))
-    return decorator(call)
-
-def set_flash(text, title = 'Info'):
-    session['messages'].append([title, text])
+    return '?'+'&'.join(["%s=%s" % (k, v) 
+                         for k, v in request.form.items(True)])
+    
+    

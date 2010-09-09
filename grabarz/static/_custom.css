@@ -27,6 +27,12 @@ div.movie_row img{
 	height:auto !important;
 }
 
-div.movie_row.x-grid3-row-over{
-	background-image: none;
+.movie_row.x-grid3-row-over{
+	background-image: none !important;
+}
+
+.discStats{
+	float: right;
+	margin-right: 100px;
+	margin-top:10px;
 }

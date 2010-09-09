@@ -13,7 +13,10 @@ setup(
         'dateutils',
         'decorator',
         'simplejson',
-	    'imdbpy',
+	'imdbpy',
         'mechanize',
+	'monocle',
+	'SQLAlchemy2',
     ]
+
 )

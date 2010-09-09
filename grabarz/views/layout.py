@@ -1,12 +1,25 @@
 ## -*- coding: utf-8 -*-
-from flask import Module, session
+import os
+from flask import Module, session, g, request
+import grabarz
+from grabarz import app
 from grabarz.lib.beans import (Config, Desktop, MultiLoader, HTML, Menu, 
                                Actions, Composite, Window, TimerRegister, 
-                               Infobox)
+                               Infobox, Slots, Reload)
 from grabarz.lib.utils import jsonify, fixkeys
-from grabarz import app
+
 
 layout = Module(__name__)
+
+GIGABYTE = 1024 * 1024 * 1024
+
+
+@layout.route('/layout/test')
+@jsonify
+def test():
+    app.logger.debug('TASK TEST')
+    return ''
+    
 
 @layout.route('/layout/config')
 @jsonify
@@ -22,6 +35,35 @@ def config():
 @layout.route('/layout/slots')
 @jsonify
 def slots():
+    return Slots(
+             dict(
+                 id='TOP',
+                 split=True,
+                 data=['NORTH', 60],
+                 margins=[5, 5, 5, 5],
+                 scroll='NONE',
+                 url="/layout/top",
+             ),               
+               
+             dict(
+                 id='LEFT',
+                 split=True,
+                 data=['WEST', 200],
+                 margins=[5, 5, 5, 5],
+                 scroll='NONE',
+                 url="/layout/left",
+             ),
+
+             dict(
+                 id='CONTENT',
+                 split=True,
+                 data=['CENTER', 100, 100, 100],
+                 margins=[5, 5, 5, 5],
+                 scroll='AUTO',
+                 url="/movies/ready_to_watch",
+             ),         
+        )
+    
     return Desktop(
         heading='',
         menu_items=[
@@ -72,8 +114,21 @@ def slots():
 @layout.route('/layout/top')
 @jsonify
 def top():
+    
+    #: Counting disk stats
+    disk = os.statvfs("/")
+    available = float(disk.f_bsize * disk.f_bavail) / GIGABYTE
+    used = disk.f_bsize * (disk.f_blocks - disk.f_bavail) / GIGABYTE 
+
+    
     return HTML(
-        content = "<img src='/static/_logo.png' alt='logo'/>",
+        content = (
+           "<img src='/static/_logo.png' alt='logo'/>" +
+           "<span class='discStats'>" +
+           "<span >Dane zajmują: <b>%.2f GB</b></span><br/>" % used +
+           "<span >Pozostało wolnych: <b>%.2f GB</b></span>" % available +
+           "</span>" 
+        )
     )
 
 @layout.route('/layout/content')
@@ -85,53 +140,68 @@ def content():
         scroll="NONE",
     )
 
+
+def get_folder_count(path):
+    """ Returns count of movies in given path """
+    return str(len(os.listdir(path)))
+
+
 @layout.route('/layout/left')
 @jsonify
 def left():
+    gfc = lambda x: get_folder_count(app.config[x])
     
     return Menu(
-        sections = ["Filmy", "Seriale", "System"],
+        sections = ["Filmy", "Seriale", "System"],        
         
         Filmy = [
-                 
-            dict(
-                 url = '/movies/ready_to_watch',
-                 slot = 'CONTENT',
-                 id = 'aaa',
-                 title = 'gotowe',              
-                 icon = "icon-eye",   
-            ),
             
-                             
             dict(
                  url = '/movies/add',
                  slot = 'internal',
-                 id = 'aaa',
+                 id = 'movies-add',
                  title = 'dodaj',              
                  icon = "icon-add",   
             ),
+                             
+            dict(
+                 url = '/movies/ready_to_watch',
+                 slot = 'CONTENT',
+                 id = 'movies-ready_to_watch',
+                 title = 'gotowe [%s]' % gfc('MOVIES_READY_DIR'),              
+                 icon = "icon-eye",
+            ),
+                                        
+            
+            dict(
+                 url = '/movies/downloading',
+                 slot = 'CONTENT',
+                 id = 'movies-downloading',
+                 title = 'Ściągane [%s]' % gfc('MOVIES_DOWNLOADING_DIR'),         
+                 icon = "icon-arrow_down",   
+            ),            
                                  
             dict(
-                 url = '/',
+                 url = '/movies/found',
                  slot = 'CONTENT',
-                 id = 'aaa',
-                 title = 'oczekujące na akceptację',
-                 icon = "icon-clock_red",                     
+                 id = 'movies-founded',
+                 title = 'znalezione [%s]' % gfc('MOVIES_FOUND_DIR'),
+                 icon = 'icon-zoom',                     
             ),
             
             dict(
-                 url = '/',
+                 url = '/movies/watched',
                  slot = 'CONTENT',
-                 id = 'aaa',
-                 title = 'obejrzane',
+                 id = 'movies-watched',
+                 title = 'obejrzane [%s]' % gfc('MOVIES_WATCHED_DIR'),
                  icon = "icon-television_delete",      
                            
             ),
             
             dict(
-                 url = '/',
+                 url = '/movies/settings',
                  slot = 'CONTENT',
-                 id = 'aaa',
+                 id = 'movies-settings',
                  title = 'ustawienia',
                  icon = "icon-film_edit",  
                       
@@ -224,28 +294,33 @@ def rtorrent():
     
 @layout.route('/layout/init')
 @jsonify
-def init():
-    session['messages'] = []
+def init():    
+    session['updates'] = []
+    session['hydra_loggers'] = {}
     
     return TimerRegister(
         name = 'messages',
-        action = '/layout/messages',
-        interval =  3000,
-        slot = 'internal',
-                        
+        action = '/layout/updates',
+        interval =  app.config['UPDATE_INTERVAL'],
+        slot = 'internal',                        
     )
 
 
-
-@layout.route('/layout/messages')
+@layout.route('/layout/logger_window')
 @jsonify
-def messages():
-    rv =  Composite(
-        *[Infobox(
-            title = info[0],
-            text = info[1],
-            duration = 5000,
-            ) for info in session['messages']]                     
+def logger_window():    
+    return HTML(
+        content = session['hydra_loggers'][request.args['slot_id']]    
     )
-    session['messages'] = []
+
+
+@layout.route('/layout/updates')
+@jsonify
+def updates(): 
+        
+    rv =  Composite(
+        *session['updates']                
+    )    
+    session['updates'] = []
+    
     return rv

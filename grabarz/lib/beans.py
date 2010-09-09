@@ -1,7 +1,24 @@
 ## -*- coding: utf-8 -*-
+from decorator import decorator
 from copy import deepcopy
 from flask import request
-from grabarz.lib.utils import wrapped
+
+def wrap(type, result):
+    return dict(
+        type=type,
+        result=result,
+    )
+
+def wrapped(type, *args, **kwargs):
+    """ Dekorator, który zawija slownik pod dany klucz
+    
+    @param type: str
+    @param result: dict
+    """
+    def call(func, *args, **kwargs):
+        return wrap(type, func(*args, **kwargs))
+    return decorator(call)
+
 
 class Conditional(object):
     """ Przechowuje obiekt + warunek konieczny, aby obiekt był zwrócony. """
@@ -84,7 +101,12 @@ class Menu(Bean):
     
 class Actions(Bean):
     __type__ = 'actions'  
-
+    
+    
+class Reload(Bean):
+    __type__ = 'reload'
+    silent = False
+    
 
 class Fieldset(Bean):
     type = "fieldset"
@@ -105,6 +127,21 @@ def Composite(*args):
             continue
         result.append(a)
     return result
+
+@wrapped('slots')
+def Slots(*args):
+    return [a for a in args]
+
+
+class MenuItem(Bean):
+    pass
+
+def MenuItems(*args):
+    return dict(
+        menu_items = [a for a in args]
+    )
+
+
 
 @wrapped('multiloader')
 def MultiLoader(*args):
@@ -213,7 +250,7 @@ class DateField(Field):
     __sample_val__ = '19-08-2010'
     label = ''
     value = ''
-
+    
 
 class ChoiceField(Field):
     widget = 'choice'
