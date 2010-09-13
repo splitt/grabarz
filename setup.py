@@ -9,14 +9,12 @@ setup(
     zip_safe=False,
     install_requires=[
         'Flask-SQLAlchemy',
+        'Flask-script',
         'pyquery',
         'dateutils',
         'decorator',
         'simplejson',
-	'imdbpy',
+	    'imdbpy',
         'mechanize',
-	'monocle',
-	'SQLAlchemy2',
     ]
-
 )

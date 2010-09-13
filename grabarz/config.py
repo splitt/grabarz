@@ -6,15 +6,15 @@ class Config(object):
     UPDATE_INTERVAL = 1000
     
 class DevelopmentConfig(Config):
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///../db/devel.db'
+    SQLALCHEMY_DATABASE_URI = 'sqlite:////home/mzajonz/workspace/grabarz/db/devel.db'
     DEBUG = True
-    DUMP_DIR = join(split(abspath(''))[0]+'/shares')
+    DUMP_DIR = '/home/mzajonz/workspace/grabarz/shares'
     MOVIES_DIR = join(DUMP_DIR, 'movies')
     MOVIES_READY_DIR = join(MOVIES_DIR, 'ready')
     MOVIES_WATCHED_DIR = join(MOVIES_DIR, 'watched')
     MOVIES_DOWNLOADING_DIR = join(MOVIES_DIR, 'downloading')
     MOVIES_FOUND_DIR = join(MOVIES_DIR, 'found')
-    URL_ROOT = 'http://grabarz.milosz'
+    URL_ROOT = 'http://grabarz-wsgi.milosz'
 
 class ProductionConfig(Config):    
     DATABASE = '../db/dev.db'

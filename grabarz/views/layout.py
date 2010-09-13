@@ -308,19 +308,25 @@ def init():
 
 @layout.route('/layout/logger_window')
 @jsonify
-def logger_window():    
-    return HTML(
-        content = session['hydra_loggers'][request.args['slot_id']]    
+def logger_window():
+    id = request.args.get('slot_id')    
+    return Window(
+        slotname = id,        
+        heading = "log",
+        object = HTML(
+            content = session['hydra_loggers'][id],
+        )            
     )
 
 
 @layout.route('/layout/updates')
 @jsonify
-def updates(): 
-        
+def updates():        
     rv =  Composite(
         *session['updates']                
-    )    
-    session['updates'] = []
+    )
+    
+    if session['updates']:
+        session['updates'] = {}
     
     return rv

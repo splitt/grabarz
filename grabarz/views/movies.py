@@ -12,9 +12,9 @@ from pprint import pformat
 
 import mechanize
 from pyquery import PyQuery as pq
-from flask import Module, request, session, g
+from flask import Module, request, session, g, redirect
 
-from grabarz import app
+from grabarz import app, Task
 from grabarz.lib import torrent
 from grabarz.lib.beans import (Config, Desktop, MultiLoader, HTML, Menu, 
                                Listing, Window, Form, Button, Link, CharField,
@@ -83,19 +83,19 @@ MENU_OPTIONS = [
 
 
 @movies.route('/movies/feed_movie')
-def feed_movie():
+def feed_movie(absolute_path = None):
     """Creates folder with movie data.
     
     @param absolute_path: absolute path where function will drop data files.
     @param report_slot: slot's it holding log.
     @param type:  
-    """    
-    absolute_path = request.args['absolute_path']
-    type = request.args['type'] or 'new'
+    """
+    absolute_path = absolute_path or request.args.get('uid')
+    type = request.args.get('type') or 'new'
     
-    folder = absolute_path.split()[-1] 
+    folder = split(absolute_path)[-1] 
     data = {}    
-    hydra_log = HydraLog('feedlog_'+folder)
+    hydra_log = HydraLog('feed_movie|'+folder)
             
     #: Parsing movie filename for proper title            
     if type == 'new':
@@ -125,7 +125,7 @@ def feed_movie():
     imdb_id = movie.getID()
     imdb_data = imdb.get_movie(imdb_id)    
     title = data['title'] = imdb_data['title']
-    app.logger.debug(u'Znaleziono film "%s" w bazie IMDB' % title)
+    hydra_log.emit(u'Znaleziono film "%s" w bazie IMDB' % title)
         
     #: Make contener directory for files
     full_work_dir = join(app.config['MOVIES_DOWNLOADING_DIR'], title)
@@ -167,7 +167,7 @@ def feed_movie():
         resp = None        
     
     if resp:
-        app.logger.debug(u'Znaleziono film "%s" w bazie Filmweb' % title)
+        hydra_log.emit(u'Znaleziono film "%s" w bazie Filmweb' % title)
         d = pq(resp.read())
         data['filmweb_rating'] = d('.rating .average').text().replace(',', '.')
         data['description'] = d('.filmDescrBg').text()
@@ -179,7 +179,7 @@ def feed_movie():
         app.logger.warning(u'Nie znaleziono filmu "%s" w bazie Filmweb' % title)    
         
         
-    app.logger.debug(u'Tworzę plik ini na podstawie znalezionych ' + 
+    hydra_log.emit(u'Tworzę plik ini na podstawie znalezionych ' + 
                       'informaci:\n %s' % pformat(dict((k,`v`[:60]) 
                                                        for k,v in data.items()))
                      )
@@ -412,6 +412,7 @@ def modify(action, path_param=None):
     """ Function to move movies to location specified in "destiny_conf_dir"
     argument. Movies(absolute paths) are given in URL param.
     """
+    reload = True
     
     for k, item in request.args.items(True):
         src = item
@@ -423,12 +424,16 @@ def modify(action, path_param=None):
             shutil.rmtree(src)  
             
         elif action == 'refresh':
-            feed_movie(absolute_path = src, type = 'refresh')   
+            reload = False
+            args = request.environ['QUERY_STRING']
+            Task('/movies/feed_movie?%s' % args, 0).cronify()                       
         
-    return Composite(
-        Reload(slot = 'LEFT'),
-        Reload(slot = 'CONTENT'),
-    )    
+    if reload:
+        return Composite(
+            Reload(slot = 'LEFT'),
+            Reload(slot = 'CONTENT'),
+        )
+    return MultiLoader()    
     
 @movies.route('/movies/move_watched', methods=['GET', 'POST'])
 @jsonify    
@@ -451,4 +456,5 @@ def delete():
 @movies.route('/movies/refresh', methods=['GET', 'POST'])
 @jsonify    
 def refresh():
+    app.logger.debug('refreshing')
     return modify(action='refresh')

@@ -16,26 +16,27 @@ class HydraLog(object):
     application window """
         
     def __init__(self, window_slot, initial_message=""):
-        
-                
         session['hydra_loggers'][window_slot] = initial_message
-        self.window_slot = window_slot
+        self.window_slot = window_slot        
         
         session['updates'].append(
             beans.Window(
                 slotname = self.window_slot,
-                url = '/layout/logger_window/slot_id=%s' % window_slot
+                url = '/layout/logger_window?slot_id=%s' % window_slot
             )                                
         )
+        session.modified = True
         
     def emit(self, message):        
-        app.logger.debug(message)
+        app.logger.debug(message)        
         session['hydra_loggers'][self.window_slot] += message
+        session.modified = True
+            
         session['updates'].append(
             beans.Reload(
                 slot = self.window_slot,                   
             )
-        )        
+        )
          
 
 def download(url, local_name):
