@@ -14,12 +14,13 @@ import mechanize
 from pyquery import PyQuery as pq
 from flask import Module, request, session, g, redirect
 
-from grabarz import app, Task
+from grabarz import app
 from grabarz.lib import torrent
 from grabarz.lib.beans import (Config, Desktop, MultiLoader, HTML, Menu, 
                                Listing, Window, Form, Button, Link, CharField,
                                Infobox, MenuItems, MenuItem, Reload,Composite)
 from grabarz.lib.utils import jsonify, post2get, download, HydraLog
+from grabarz.cron import Task
 
 from imdb import IMDb
 imdb = IMDb()
@@ -426,7 +427,7 @@ def modify(action, path_param=None):
         elif action == 'refresh':
             reload = False
             args = request.environ['QUERY_STRING']
-            Task('/movies/feed_movie?%s' % args, 0).cronify()                       
+#            Task('/movies/feed_movie?%s' % args, 0).cronify()                       
         
     if reload:
         return Composite(

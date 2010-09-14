@@ -1,5 +1,6 @@
-#Mon Sep 13 22:08:25 CEST 2010
+#Wed Sep 15 00:06:19 CEST 2010
 eclipse.preferences.version=1
+encoding//env/lib/python2.6/site-packages/Flask_Script-0.3-py2.6.egg/flaskext/script.py=utf-8
 encoding//grabarz/__init__.py=utf-8
 encoding//grabarz/config.py=utf-8
 encoding//grabarz/lib/beans.py=utf-8

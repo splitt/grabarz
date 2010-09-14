@@ -1,7 +1,6 @@
 ## -*- coding: utf-8 -*-
 import os
 from flask import Module, session, g, request
-import grabarz
 from grabarz import app
 from grabarz.lib.beans import (Config, Desktop, MultiLoader, HTML, Menu, 
                                Actions, Composite, Window, TimerRegister, 

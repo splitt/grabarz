@@ -1,5 +1,5 @@
 ## -*- coding: utf-8 -*-
-from os.path import abspath, join, split
+from os.path import join
 
 class Config(object):
     SECRET_KEY = '^&@&*$@#BRKFJ*(@#RUY(*#FH#YUBG#*F@&R*G#GF@&*#FG'
@@ -14,7 +14,7 @@ class DevelopmentConfig(Config):
     MOVIES_WATCHED_DIR = join(MOVIES_DIR, 'watched')
     MOVIES_DOWNLOADING_DIR = join(MOVIES_DIR, 'downloading')
     MOVIES_FOUND_DIR = join(MOVIES_DIR, 'found')
-    URL_ROOT = 'http://grabarz-wsgi.milosz'
+    URL_ROOT = 'http://grabarz.milosz'
 
 class ProductionConfig(Config):    
     DATABASE = '../db/dev.db'

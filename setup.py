@@ -16,5 +16,6 @@ setup(
         'simplejson',
 	    'imdbpy',
         'mechanize',
+	'tornado',
     ]
 )
