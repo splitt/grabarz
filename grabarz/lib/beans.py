@@ -95,6 +95,8 @@ class TimerRegister(Bean):
 class Desktop(Bean):
     __type__ = 'desktop'    
 
+class WindowChange(Bean):
+    __type__ = 'window_change'  
 
 class Menu(Bean):
     __type__ = 'menu'

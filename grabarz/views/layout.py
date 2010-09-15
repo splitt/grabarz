@@ -1,7 +1,7 @@
 ## -*- coding: utf-8 -*-
 import os
 from flask import Module, session, g, request
-from grabarz import app
+from grabarz import app, models
 from grabarz.lib.beans import (Config, Desktop, MultiLoader, HTML, Menu, 
                                Actions, Composite, Window, TimerRegister, 
                                Infobox, Slots, Reload)
@@ -16,7 +16,8 @@ GIGABYTE = 1024 * 1024 * 1024
 @layout.route('/layout/test')
 @jsonify
 def test():
-    app.logger.debug('TASK TEST')
+    from datetime import datetime
+    app.logger.debug('%s TASK TEST' % str(datetime.now()))
     return ''
     
 
@@ -204,7 +205,14 @@ def left():
                  title = 'ustawienia',
                  icon = "icon-film_edit",  
                       
-            ),                                                
+            ),        
+            
+            dict(
+                 url = '/movies/test',
+                 slot = 'CONTENT',
+                 id = 'movies-test',
+                 title = 'test',                      
+            ),  
         ],               
         
         Seriale = [
@@ -294,8 +302,6 @@ def rtorrent():
 @layout.route('/layout/init')
 @jsonify
 def init():    
-    session['updates'] = []
-    session['hydra_loggers'] = {}
     
     return TimerRegister(
         name = 'messages',
@@ -305,27 +311,9 @@ def init():
     )
 
 
-@layout.route('/layout/logger_window')
-@jsonify
-def logger_window():
-    id = request.args.get('slot_id')    
-    return Window(
-        slotname = id,        
-        heading = "log",
-        object = HTML(
-            content = session['hydra_loggers'][id],
-        )            
-    )
-
-
 @layout.route('/layout/updates')
 @jsonify
-def updates():        
-    rv =  Composite(
-        *session['updates']                
-    )
+def updates():    
+    beans = models.CallbackUpdate.dump()
     
-    if session['updates']:
-        session['updates'] = {}
-    
-    return rv
+    return Composite(*beans)

@@ -1,5 +1,6 @@
 ## -*- coding: utf-8 -*-
-from datetime import datetime
+import time
+from datetime import datetime, timedelta
 from threading import Thread
 from decorator import decorator
 from functools import wraps
@@ -8,35 +9,43 @@ import simplejson
 from decorator import decorator
 from flask import make_response, session, request, g, session
 
-from grabarz import app
+from grabarz import app, models
 from grabarz.lib import beans
 
 class HydraLog(object):
     """ Logs to normal application logger + extra logger to specific 
-    application window """
+    application window """    
         
-    def __init__(self, window_slot, initial_message=""):
-        session['hydra_loggers'][window_slot] = initial_message
-        self.window_slot = window_slot        
+    def __init__(self, slot, heading="logger"):
+        self.slot = slot
+        self.message = ""
+        self.heading = heading
         
-        session['updates'].append(
-            beans.Window(
-                slotname = self.window_slot,
-                url = '/layout/logger_window?slot_id=%s' % window_slot
-            )                                
-        )
-        session.modified = True
+        models.CallbackUpdate(self.get_window()).commit()
         
-    def emit(self, message):        
-        app.logger.debug(message)        
-        session['hydra_loggers'][self.window_slot] += message
-        session.modified = True
-            
-        session['updates'].append(
-            beans.Reload(
-                slot = self.window_slot,                   
+    def get_window(self):
+        return beans.Window(
+            slotname = self.slot,
+            heading = self.heading,
+            replace = True,
+            savestate = True,
+            object = beans.HTML(
+                content = self.message,                
             )
         )
+        
+    def close(self):
+        bean = beans.WindowChange(
+            slotname = self.slot,
+            action = 'close'
+        )
+        models.CallbackUpdate(bean, delay = timedelta(seconds = 5)).commit()
+        
+    def emit(self, message):
+        self.message +=  '<br/>' + message      
+        app.logger.debug(message)        
+                                
+        models.CallbackUpdate(self.get_window()).commit()
          
 
 def download(url, local_name):

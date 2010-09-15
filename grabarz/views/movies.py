@@ -14,7 +14,7 @@ import mechanize
 from pyquery import PyQuery as pq
 from flask import Module, request, session, g, redirect
 
-from grabarz import app
+from grabarz import app, models
 from grabarz.lib import torrent
 from grabarz.lib.beans import (Config, Desktop, MultiLoader, HTML, Menu, 
                                Listing, Window, Form, Button, Link, CharField,
@@ -83,48 +83,64 @@ MENU_OPTIONS = [
 ]
 
 
+MOVIE_DATA = dict(
+        imdb_rating = '',
+        imdb_data = '',
+        title = '',
+        runtime = '',
+        year = '',
+        date_added = '',
+        filmweb_rating = '',
+        filmweb_opinions = '',
+        filmweb_url = '',
+        polish_title = '',
+    )
+
+ 
 @movies.route('/movies/feed_movie')
-def feed_movie(absolute_path = None):
-    """Creates folder with movie data.
+def feed_movie():
+    """Creates folder with movie data."""
+            
+    type = request.args.get('action') or 'new'
+    path = request.args.get('path')
+    title = path.split('/')[-1]
     
-    @param absolute_path: absolute path where function will drop data files.
-    @param report_slot: slot's it holding log.
-    @param type:  
-    """
-    absolute_path = absolute_path or request.args.get('uid')
-    type = request.args.get('type') or 'new'
+    hydra_log = HydraLog('feeding_log|'+title, 
+                         "Pobieranie definicji filmu '%s'" % title)
     
-    folder = split(absolute_path)[-1] 
-    data = {}    
-    hydra_log = HydraLog('feed_movie|'+folder)
+    hydra_log.emit(u'Rozpoczynam procesowanie filmu "%s" ' % title)    
+    
+    data = dict(MOVIE_DATA)  
             
     #: Parsing movie filename for proper title            
     if type == 'new':
         year_re = '(1|2)[0-9]{3}$'
-        name = folder.replace('.', ' ')
+        name = title.replace('.', ' ')
         name = re.sub('(1080p|720p).*$', '', name).strip()        
         title = re.sub('(1|2)[0-9]{3}$', '', name).strip().capitalize()
         movie_year = re.search(year_re, name)
     elif type == 'refresh':
         config = ConfigParser.RawConfigParser()        
-        config.read(join(absolute_path, 'grabarz.ini'))
+        config.read(join(path, 'grabarz.ini'))
         ini_data = dict(config.items('data'))
         movie_year = ini_data.get('year')
         title = ini_data.get('title')
             
+    
     config = ConfigParser.RawConfigParser()
+    
                             
-    #: Searching in IMDB database
-    hydra_log.emit(u'Rozpoczynam procesowanie filmu "%s" ' % title)    
+    #: Searching in IMDB database    
+    hydra_log.emit(u'Szukam definicji w bazie IMDB')    
     try:
         movie = imdb.search_movie(title)[0]
     except IndexError:
         app.logger.debug(u'Nie rozpoznano filmu "%s" w bazie IMDB' % title)
 #        set_flash(u'Nie rozpoznano filmu %s' % title)
-        return
+        return    
         
     imdb_id = movie.getID()
-    imdb_data = imdb.get_movie(imdb_id)    
+    imdb_data = imdb.get_movie(imdb_id)
     title = data['title'] = imdb_data['title']
     hydra_log.emit(u'Znaleziono film "%s" w bazie IMDB' % title)
         
@@ -145,16 +161,17 @@ def feed_movie(absolute_path = None):
     data['year'] =  imdb_data['year']
     data['genres'] = ' '.join(imdb_data['genres'])
     data['date_added'] = '-'.join(str(date.today()).split('-')[::-1])
-    
+                
     #: Saving cover url
     if imdb_data.get('cover url'):    
         download(imdb_data['cover url'], join(full_work_dir, 'cover.jpg'))
                      
     #: Searching in Filmweb site
+    hydra_log.emit(u'Szukam definicji w bazie Filmweb')
     br = mechanize.Browser()
     resp = br.open('http://www.filmweb.pl/search?q=%s' % title.replace(' ','+'))
     
-    #: Dodge commercial Welcome :)
+    #: Dodge Welcome commercial  :)
     try:        
         resp = br.follow_link(text_regex=u"Przejd", nr=0)
     except(mechanize.LinkNotFoundError):
@@ -179,12 +196,15 @@ def feed_movie(absolute_path = None):
     else:
         app.logger.warning(u'Nie znaleziono filmu "%s" w bazie Filmweb' % title)    
         
-        
-    hydra_log.emit(u'Tworzę plik ini na podstawie znalezionych ' + 
-                      'informaci:\n %s' % pformat(dict((k,`v`[:60]) 
-                                                       for k,v in data.items()))
-                     )
-    
+    data['__space__'] = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+    hydra_log.emit(u"""=================================<br/>
+                        Podstawowe informację o filmie:<br/> 
+                        %(__space__)srating IMDB: %(imdb_rating)s<br/>
+                        %(__space__)sFilmweb: %(filmweb_rating)s<br/>
+                        %(__space__)sPolski tytuł: "%(polish_title)s"<br/>
+                        %(__space__)srok produkcji: %(year)s<br/>                       
+                    """% data) 
+            
     #: Dumps data to ini file    
     config.add_section('data')
     for k, v in data.items():
@@ -194,12 +214,18 @@ def feed_movie(absolute_path = None):
     with open(join(full_work_dir, 'grabarz.ini'), 'wb') as configfile:
         config.write(configfile)
         
+    hydra_log.emit(u'Utworzono plik ini<br/><br/>KONIEC')
+    
+    models.CallbackUpdate(Reload(slot = "CONTENT")).commit()
+    hydra_log.close()
+    
+    return 'done'
+        
 
 @movies.route('/movies/add')
 @jsonify
 def add():
-    """ Window for entering torrent file link """
-    
+    """ Window for entering torrent file link """    
     return Window(                
         slotname = '/movies/add',
         heading = 'Dodanie torrenta filmowego',
@@ -225,12 +251,26 @@ def add():
             ],            
         ),
     )
+    
+    
+@movies.route('/movies/test')
+@jsonify
+def test():
+    """ Window for entering torrent file link """
+    import random    
+    return Window(                
+        slotname = '/movies/add',
+        heading = 'test',
+        replace = True,
+        savestate = True,
+        object = HTML(
+            content = str(random.randint(0,100))  
+        ),
+    )
 
 
 def get_movies_list(title, path, menu_options):
-    """ Listing movies for given path in filesystem """
-    
-    session['current_page'] = request.path
+    """ Listing movies for given path in filesystem """    
     data = []
     config = ConfigParser.RawConfigParser()
     
@@ -425,9 +465,10 @@ def modify(action, path_param=None):
             shutil.rmtree(src)  
             
         elif action == 'refresh':
+            
             reload = False
-            args = request.environ['QUERY_STRING']
-#            Task('/movies/feed_movie?%s' % args, 0).cronify()                       
+            task_url = '/movies/feed_movie?path=%s&action=refresh' % item
+            Task(task_url, 0).cronify()                       
         
     if reload:
         return Composite(
