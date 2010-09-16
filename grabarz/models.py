@@ -11,7 +11,7 @@ class ExtraModelFeatures(object):
         db.session.add(self)
         db.session.commit()         
 
-class Task(db.Model):
+class Task(db.Model, ExtraModelFeatures):
     """ Task executed by cron """
     query = db.session.query_property()
     
@@ -23,8 +23,8 @@ class Task(db.Model):
     timedelta = db.Column(db.Interval)    
     run_periodic = db.Column(db.Boolean)    
             
-    def __init__(self, url, delay, run_periodic = False):
-        if not delay or delay == 'now':
+    def __init__(self, url, delay = None, run_periodic = False):
+        if not delay:
             delay = timedelta(seconds = 0)
             
         self.url = url
@@ -46,12 +46,7 @@ class Task(db.Model):
         db.session.commit() 
             
         urllib.urlopen(app.config['URL_ROOT'] + self.url)
-        
-    def cronify(self):
-        app.logger.debug('adding task %s do cron database' % self.url)
-        db.session.add(self)
-        db.session.commit()
-            
+                
     def __repr__(self):
         return "<Task %s>" % self.execute_time
     

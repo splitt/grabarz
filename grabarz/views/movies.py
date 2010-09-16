@@ -15,7 +15,7 @@ from pyquery import PyQuery as pq
 from flask import Module, request, session, g, redirect
 
 from grabarz import app, models
-from grabarz.lib import torrent
+from grabarz.lib import torrent, beans
 from grabarz.lib.beans import (Config, Desktop, MultiLoader, HTML, Menu, 
                                Listing, Window, Form, Button, Link, CharField,
                                Infobox, MenuItems, MenuItem, Reload,Composite)
@@ -96,37 +96,95 @@ MOVIE_DATA = dict(
         polish_title = '',
     )
 
+
+@movies.route('/movies/window-movies')
+@jsonify
+def window_movies():
+    """ Main movies window """
+    return beans.Window(
+        heading = 'filmy',
+        height = 0.8,
+        width = 0.9,
+        object = beans.Tabs(
+            heading = None,
+            tabs = [
+                beans.Tab(                    
+                    id = 'movies-ready',
+                    url = '/make_slot?url=/movies/ready',
+                    title = 'Gotowe do obejrzenia',
+                    params = dict(
+                      icon = 'icon-eye',    
+                    ),
+                ),
+                beans.Tab(
+                    id = 'movies-downloading',
+                    url = '/make_slot?url=/movies/downloading',
+                    title = 'Pobierane',
+                    params = dict(
+                      icon = 'icon-arrow_down',            
+                    ),                    
+                ),                
+                beans.Tab(
+                    id = 'movies-founded',
+                    url = '/make_slot?url=/movies/founded',
+                    title = 'Znalezione',
+                    params = dict(
+                      icon = 'icon-zoom',            
+                    ),                    
+                ),
+                beans.Tab(
+                    id = 'movies-watched',
+                    url = '/make_slot?url=/movies/watched',
+                    title = 'Obejrzane',
+                    params = dict(
+                      icon = 'icon-television_delete',            
+                    ),                    
+                ),
+            ]        
+        )                        
+    )
+    
+
  
 @movies.route('/movies/feed_movie')
 def feed_movie():
     """Creates folder with movie data."""
-            
-    type = request.args.get('action') or 'new'
+                
     path = request.args.get('path')
-    title = path.split('/')[-1]
+    file = request.args.get('file')
+    
+    #: if file passed than adding now torrent, otherwise only refreshing
+    title = file or path.split('/')[-1]
     
     hydra_log = HydraLog('feeding_log|'+title, 
                          "Pobieranie definicji filmu '%s'" % title)
     
-    hydra_log.emit(u'Rozpoczynam procesowanie filmu "%s" ' % title)    
-    
+    hydra_log.emit(u'Rozpoczynam procesowanie filmu "%s" ' % title)        
     data = dict(MOVIE_DATA)  
             
-    #: Parsing movie filename for proper title            
-    if type == 'new':
+    #: Parsing movie filename for proper title
+    if file:
         year_re = '(1|2)[0-9]{3}$'
-        name = title.replace('.', ' ')
-        name = re.sub('(1080p|720p).*$', '', name).strip()        
-        title = re.sub('(1|2)[0-9]{3}$', '', name).strip().capitalize()
-        movie_year = re.search(year_re, name)
-    elif type == 'refresh':
+        title = title.replace('.', ' ')
+        title = re.sub('(1080|720).*$', '', title).strip()
+        title = re.sub('\(|\)|\[|\]', '', title).strip()        
+        title = re.sub(year_re, '', title).strip().capitalize()
+        hydra_log.emit(u'Sparsowano tytuł filmu: "%s"' % title)
+        movie_year = re.search(year_re, title)
+        
+        if movie_year:
+            movie_year = movie_year[0]
+            hydra_log.emit(u'Wyciągnięto rok produkcji z nazwt filmu: %s' 
+                           % movie_year)
+        
+    else: #refreshing
         config = ConfigParser.RawConfigParser()        
         config.read(join(path, 'grabarz.ini'))
         ini_data = dict(config.items('data'))
         movie_year = ini_data.get('year')
-        title = ini_data.get('title')
-            
-    
+        title = ini_data.get('title')        
+        
+                
     config = ConfigParser.RawConfigParser()
     
                             
@@ -136,7 +194,6 @@ def feed_movie():
         movie = imdb.search_movie(title)[0]
     except IndexError:
         app.logger.debug(u'Nie rozpoznano filmu "%s" w bazie IMDB' % title)
-#        set_flash(u'Nie rozpoznano filmu %s' % title)
         return    
         
     imdb_id = movie.getID()
@@ -155,11 +212,12 @@ def feed_movie():
     #: Creating a ghost file
 #    file = open(join(full_work_dir, name+'_downloading'), 'w')
 #    file.close()    
+        
 
-    data['imdb_rating'] = imdb_data['rating']
-    data['runtime'] =  ' '.join(imdb_data['runtime'][:1])
-    data['year'] =  imdb_data['year']
-    data['genres'] = ' '.join(imdb_data['genres'])
+    data['imdb_rating'] = imdb_data.get('rating')
+    data['runtime'] =  ' '.join(imdb_data.get('runtime')[:1])
+    data['year'] =  imdb_data.get('year')
+    data['genres'] = ' '.join(imdb_data.get('genres'))
     data['date_added'] = '-'.join(str(date.today()).split('-')[::-1])
                 
     #: Saving cover url
@@ -220,56 +278,10 @@ def feed_movie():
     hydra_log.close()
     
     return 'done'
-        
-
-@movies.route('/movies/add')
-@jsonify
-def add():
-    """ Window for entering torrent file link """    
-    return Window(                
-        slotname = '/movies/add',
-        heading = 'Dodanie torrenta filmowego',
-        height = 130,
-        object = Form(
-            slotname = '/movies/add',            
-            buttons = [
-                Button(
-                     slot = "content",
-                     link = Link(
-                        url = "/movies/process",
-                        slot = "window_add_entry",
-                     ),
-                     label = "Dodaj"
-                ),
-            ],    
-            formdefs = [
-                CharField(
-                    name='torrent_src',
-                    label='Podaj adres pliku torrent',
-                    width=350,
-                 ),                      
-            ],            
-        ),
-    )
+            
     
-    
-@movies.route('/movies/test')
-@jsonify
-def test():
-    """ Window for entering torrent file link """
-    import random    
-    return Window(                
-        slotname = '/movies/add',
-        heading = 'test',
-        replace = True,
-        savestate = True,
-        object = HTML(
-            content = str(random.randint(0,100))  
-        ),
-    )
 
-
-def get_movies_list(title, path, menu_options):
+def get_movies_list(path, menu_options,title = None):
     """ Listing movies for given path in filesystem """    
     data = []
     config = ConfigParser.RawConfigParser()
@@ -324,9 +336,8 @@ def get_movies_list(title, path, menu_options):
         
     menu_options = ','.join(menu_options)
                 
-    return Listing(
+    return Composite(Listing(
          heading=title,
-         sid='movies-ready_to_watch',
          paging = False,         
          menu_url = '/movies/get_context_menu?items=%s' % menu_options,
          autoexpand_column = "title",
@@ -369,15 +380,14 @@ def get_movies_list(title, path, menu_options):
 #            ),
         ],
         data=data,
-    )
+    ))
 
 
-@movies.route('/movies/ready_to_watch')
+@movies.route('/movies/ready')
 @jsonify
-def ready_to_watch():
+def ready():
     """ Displays list of downloaded movies """
-    return get_movies_list(title = "Filmy gotowe do obejrzenia",
-                           path = app.config['MOVIES_READY_DIR'],
+    return get_movies_list(path = app.config['MOVIES_READY_DIR'],
                            menu_options = ['refresh', 'delete', 
                                            'separator','move_watched'])
 
@@ -386,17 +396,15 @@ def ready_to_watch():
 @jsonify
 def downloading():
     """ Displays list of current downloading movies """
-    return get_movies_list(title = "Filmy aktualnie ściągane",
-                           path = app.config['MOVIES_DOWNLOADING_DIR'],
+    return get_movies_list(path = app.config['MOVIES_DOWNLOADING_DIR'],
                            menu_options = ['refresh','separator', 'delete'])
     
 
-@movies.route('/movies/found')
+@movies.route('/movies/founded')
 @jsonify
 def founded():
     """ Displays list of founded movies by robots """
-    return get_movies_list(title = "Filmy znalezione przez Grabarza",
-                           path = app.config['MOVIES_FOUND_DIR'],
+    return get_movies_list(path = app.config['MOVIES_FOUND_DIR'],
                            menu_options = ['refresh', 'start_downloading', 
                                            'separator','delete',]
                            )
@@ -406,26 +414,27 @@ def founded():
 @jsonify
 def watched():
     """ Displays list of watched movies """
-    return get_movies_list(title = "Filmy obejrzane",
-                           path = app.config['MOVIES_WATCHED_DIR'],
+    return get_movies_list(path = app.config['MOVIES_WATCHED_DIR'],
                            menu_options = ['refresh', 'separator', 
                                            'move_ready', 'delete'])    
     
         
-@movies.route('/movies/process', methods=['GET', 'POST'])
+@movies.route('/movies/fetch-torrent-file', methods=['GET', 'POST'])
 @jsonify
-def process():
+def fetch_torrent_file():
     """ Reads information from torrent file and creates grabarz.ini 
     file for given movie."""
     
-    file = torrent.get_torrent_filenames(request.form['torrent_src'])[0]
-        
-    destiny_dir = join(app.config['DUMP_DIR'], 'movies')
-    tasks.create_data_files(file, destiny_dir)
+    file = torrent.get_torrent_filenames(request.form['torrent_src'])[0]        
+    path = join(app.config['MOVIES_DOWNLOADING_DIR'], 'movies')
+
+    models.Task('/movies/feed_movie?file=%s&path=%s' % (file, path)).commit()
+    
+    return MultiLoader()
             
-    return Infobox(                             
-        text = 'Rozpoczęto pobiernia filmu %s file' % file,
-    )
+#    return Infobox(                             
+#        text = 'Rozpoczęto pobiernia filmu %s file' % file,
+#    )
     
 
 @movies.route('/movies/get_context_menu', methods=['GET', 'POST'])
@@ -468,7 +477,7 @@ def modify(action, path_param=None):
             
             reload = False
             task_url = '/movies/feed_movie?path=%s&action=refresh' % item
-            Task(task_url, 0).cronify()                       
+            Task(task_url).commit()                       
         
     if reload:
         return Composite(

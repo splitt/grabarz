@@ -154,6 +154,16 @@ def MultiLoader(*args):
         result.append(a)
     return result
 
+
+class MenuButton(Bean):
+    type = 'button'
+    title = 'button'
+    link = Link()
+    
+class MenuSeparator(Bean):
+    type = 'separator'
+    
+    
 class Button(Bean):
     widget = 'button'
     link = Link()
@@ -170,6 +180,17 @@ class Form(Bean):
     formdefs = []
 
 
+class Tabs(Bean):
+    __type__ = 'tabs'
+    heading = None
+    tabs = []
+    
+class Tab(Bean):
+    url = '/'
+    params = {}
+    id = ''
+    title = ''
+
 class MultiField(Bean):
     type = 'multifield'
     fielddefs = []
@@ -178,11 +199,14 @@ class MultiField(Bean):
 
 class Window(Bean):
     __type__ = 'window'
+    savestate = True
     replace = True
     heading = None
     width = 500
     height = 300
     slotname = "window"
+    maximizable = True
+    minimizable = True
 
 
 class HTML(Bean):

@@ -16,5 +16,7 @@
 <path>/home/mzajonz/workspace/grabarz/env/lib/python2.6/site-packages</path>
 <path>/usr/lib/python2.6</path>
 <path>/usr/lib/python2.6/dist-packages</path>
+<path>/home/mzajonz/workspace/grabarz/env/lib/python2.6/site-packages/SQLAlchemy-0.6.3-py2.6.egg</path>
+<path>/home/mzajonz/workspace/grabarz/env/lib/python2.6/site-packages/Flask_SQLAlchemy-0.9.1-py2.6.egg</path>
 </pydev_pathproperty>
 </pydev_project>
