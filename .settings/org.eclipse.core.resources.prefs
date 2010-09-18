@@ -1,6 +1,9 @@
-#Thu Sep 16 19:23:58 CEST 2010
+#Fri Sep 17 01:32:20 CEST 2010
 eclipse.preferences.version=1
 encoding//env/lib/python2.6/site-packages/Flask_Script-0.3-py2.6.egg/flaskext/script.py=utf-8
+encoding//env/lib/python2.6/site-packages/pyrocore/torrent/engine.py=utf-8
+encoding//env/lib/python2.6/site-packages/pyrocore/torrent/matching.py=utf-8
+encoding//env/lib/python2.6/site-packages/pyrocore/torrent/rtorrent.py=utf-8
 encoding//grabarz/__init__.py=utf-8
 encoding//grabarz/config.py=utf-8
 encoding//grabarz/lib/beans.py=utf-8

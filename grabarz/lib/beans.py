@@ -102,7 +102,10 @@ class Menu(Bean):
     __type__ = 'menu'
     
 class Actions(Bean):
-    __type__ = 'actions'  
+    __type__ = 'actions'
+    
+class Tree(Bean):
+    __type__ = 'tree'
     
     
 class Reload(Bean):
@@ -117,8 +120,9 @@ class Fieldset(Bean):
 
 
 class Link(Bean):
-    url = ''
-    slot = ""
+    url = '/layout/not-implemented'
+    slot = 'internal'
+
 
 
 @wrapped('composite')
@@ -130,10 +134,15 @@ def Composite(*args):
         result.append(a)
     return result
 
+
+    
 @wrapped('slots')
 def Slots(*args):
     return [a for a in args]
 
+@wrapped('horizontal')
+def Horizontal(*args):
+    return [a for a in args]
 
 class MenuItem(Bean):
     pass
@@ -143,6 +152,10 @@ def MenuItems(*args):
         menu_items = [a for a in args]
     )
 
+def Data(*args):
+    return dict(
+        data = [a for a in args]
+    )
 
 
 @wrapped('multiloader')
@@ -166,7 +179,11 @@ class MenuSeparator(Bean):
     
 class Button(Bean):
     widget = 'button'
-    link = Link()
+    link = Link(
+        url = '/',
+        slot = 'internal'
+    )
+    label = 'button'
 
 class Validator(Bean):
     valid = True

@@ -41,7 +41,27 @@ div.my-list-inner{
 	overflow-y:hidden !important;
 }
 
-/*
-#ux-taskbar-start{
-	display:none;
-}*/
+#x-auto-40{
+	z-index: 10;
+}
+.x-grid3-hd-row{
+	display:None;
+}
+
+
+.x-grid3-cell-inner .x-tree3-el img{
+	width:10px !important;
+}
+
+/* left-menu*/
+#x-auto-25 .x-panel-body{
+	border:0 !important;
+}
+
+#x-auto-25 .x-panel-bwrap{
+	border:1px solid #9ACD68;
+}
+
+#x-auto-25 .x-panel-btns{
+	margin-bottom:15px;
+}
