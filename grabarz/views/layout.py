@@ -1,7 +1,7 @@
 ## -*- coding: utf-8 -*-
 import os
-from flask import Module, request
-from grabarz import app, db, models, common
+from flask import Module, request, session
+from grabarz import app, common
 from grabarz.lib import beans
 
 layout = Module(__name__)
@@ -25,6 +25,8 @@ def get_folder_count(path):
 @layout.route('/layout/config')
 @common.jsonify
 def config():
+    session['callback_updates'] = []
+    
     return beans.Config(
         title="grabarz",
         default_errorwindowtitle="Wystąpił błąd aplikacji",

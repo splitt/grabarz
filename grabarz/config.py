@@ -14,6 +14,16 @@ class DevelopmentConfig(Config):
     MOVIES_WATCHED_DIR = join(MOVIES_DIR, 'watched')
     MOVIES_DOWNLOADING_DIR = join(MOVIES_DIR, 'downloading')
     MOVIES_FOUND_DIR = join(MOVIES_DIR, 'found')
+    
+    RTORRENT_DIR = join(DUMP_DIR, 'rtorrent')
+    RTORRENT_COMPLETED_DIR = join(RTORRENT_DIR, 'completed')
+    RTORRENT_SESSION_DIR = join(RTORRENT_DIR, 'session')
+    RTORRENT_WATCH_DIR = join(RTORRENT_DIR, 'watch')
+    
+    TVSHOWS_DIR = join(DUMP_DIR, 'tvshows')
+    TVSHOWS_ARCHIVE_DIR = join(TVSHOWS_DIR, 'archive')
+    TVSHOWS_CURRENT_DIR = join(TVSHOWS_DIR, 'current')
+    
     URL_ROOT = 'http://grabarz.milosz'
 
 class ProductionConfig(Config):    

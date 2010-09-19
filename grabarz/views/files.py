@@ -17,7 +17,7 @@ from grabarz import app, models, common
 from grabarz.lib import torrent, beans, utils
 
 imdb = IMDb()
-movies = Module(__name__)
+files = Module(__name__)
 IMDB_ICO = '<img src="/static/_imdb.png">'
 FILMWEB_ICO = '<img src="/static/_filmweb.ico">'
 
@@ -26,7 +26,7 @@ MENU_OPTIONS = [
                     label = "odśwież dane",
                     icon = "icon-arrow_refresh",
                     link = dict(
-                        url = "/movies/refresh%s",
+                        url = "/files/refresh%s",
                         slot = "CONTENT",               
                     ),
                 ),
@@ -36,7 +36,7 @@ MENU_OPTIONS = [
                             label = "Zacznij pobieranie",
                             icon = "icon-television_delete",
                             link = dict(
-                                url = "/movies/move_watched%s",
+                                url = "/files/move_watched%s",
                                 slot = "CONTENT",               
                             )
                         ),
@@ -46,7 +46,7 @@ MENU_OPTIONS = [
                         label = "przenieś do obejrzanych",
                         icon = "icon-arrow_down",
                         link = dict(
-                            url = "/movies/move_watched%s",
+                            url = "/files/move_watched%s",
                             slot = "CONTENT",               
                         )
                     ),
@@ -56,7 +56,7 @@ MENU_OPTIONS = [
                         label = "przenieś do gotowych",
                         icon = "icon-eye",
                         link = dict(
-                            url = "/movies/move_ready%s",
+                            url = "/files/move_ready%s",
                             slot = "CONTENT",               
                         )
                     ),
@@ -68,7 +68,7 @@ MENU_OPTIONS = [
                     label = "Usuń z dysku",
                     icon = "icon-delete",
                     link = dict(
-                        url = "/movies/delete%s",
+                        url = "/files/delete%s",
                         slot = "CONTENT",               
                     )
                 ),
@@ -90,7 +90,7 @@ MOVIE_DATA = dict(
     )
 
 
-@movies.route('/movies/window-movies')
+@files.route('/files/window-movies')
 @common.jsonify
 def window_movies():
     """ Main movies window """
@@ -103,7 +103,7 @@ def window_movies():
             tabs = [
                 beans.Tab(                    
                     id = 'movies-ready',
-                    url = '/make_slot?url=/movies/ready',
+                    url = '/make_slot?url=/files/ready',
                     title = 'Gotowe do obejrzenia',
                     params = dict(
                       icon = 'icon-eye',    
@@ -111,7 +111,7 @@ def window_movies():
                 ),
                 beans.Tab(
                     id = 'movies-downloading',
-                    url = '/make_slot?url=/movies/downloading',
+                    url = '/make_slot?url=/files/downloading',
                     title = 'Pobierane',
                     params = dict(
                       icon = 'icon-arrow_down',            
@@ -119,7 +119,7 @@ def window_movies():
                 ),                
                 beans.Tab(
                     id = 'movies-founded',
-                    url = '/make_slot?url=/movies/founded',
+                    url = '/make_slot?url=/files/founded',
                     title = 'Znalezione',
                     params = dict(
                       icon = 'icon-zoom',            
@@ -127,7 +127,7 @@ def window_movies():
                 ),
                 beans.Tab(
                     id = 'movies-watched',
-                    url = '/make_slot?url=/movies/watched',
+                    url = '/make_slot?url=/files/watched',
                     title = 'Obejrzane',
                     params = dict(
                       icon = 'icon-television_delete',            
@@ -139,7 +139,7 @@ def window_movies():
     
 
  
-@movies.route('/movies/feed_movie')
+@files.route('/files/feed_movie')
 @common.jsonify
 def feed_movie():
     """Creates folder with movie data."""
@@ -333,7 +333,7 @@ def get_movies_list(path, menu_options,title = None):
     return beans.Composite(beans.Listing(
          heading=title,
          paging = False,         
-         menu_url = '/movies/get_context_menu?items=%s' % menu_options,
+         menu_url = '/files/get_context_menu?items=%s' % menu_options,
          autoexpand_column = "title",
          param_name = 'uid',
          columns=[
@@ -377,7 +377,7 @@ def get_movies_list(path, menu_options,title = None):
     ))
 
 
-@movies.route('/movies/ready')
+@files.route('/files/ready')
 @common.jsonify
 def ready():
     """ Displays list of downloaded movies """
@@ -386,7 +386,7 @@ def ready():
                                            'separator','move_watched'])
 
 
-@movies.route('/movies/downloading')
+@files.route('/files/downloading')
 @common.jsonify
 def downloading():
     """ Displays list of current downloading movies """
@@ -394,7 +394,7 @@ def downloading():
                            menu_options = ['refresh','separator', 'delete'])
     
 
-@movies.route('/movies/founded')
+@files.route('/files/founded')
 @common.jsonify
 def founded():
     """ Displays list of founded movies by robots """
@@ -404,7 +404,7 @@ def founded():
                            )
     
     
-@movies.route('/movies/watched')
+@files.route('/files/watched')
 @common.jsonify
 def watched():
     """ Displays list of watched movies """
@@ -413,7 +413,7 @@ def watched():
                                            'move_ready', 'delete'])    
     
         
-@movies.route('/movies/fetch-torrent-file', methods=['GET', 'POST'])
+@files.route('/files/fetch-torrent-file', methods=['GET', 'POST'])
 @common.jsonify
 def fetch_torrent_file():
     """ Reads information from torrent file and creates grabarz.ini 
@@ -421,11 +421,11 @@ def fetch_torrent_file():
     
     file = torrent.get_torrent_filenames(request.form['torrent_src'])[0]        
     path = join(app.config['MOVIES_DOWNLOADING_DIR'], 'movies')
-    models.Task('/movies/feed_movie?file=%s&path=%s' % (file, path)).commit()
+    models.Task('/files/feed_movie?file=%s&path=%s' % (file, path)).commit()
     return beans.Null()
     
 
-@movies.route('/movies/get_context_menu', methods=['GET', 'POST'])
+@files.route('/files/get_context_menu', methods=['GET', 'POST'])
 @common.jsonify
 def get_context_menu():
     """ Filter specific menu options from all possible values. 
@@ -464,7 +464,7 @@ def modify(action, path_param=None):
         elif action == 'refresh':
             
             reload = False
-            task_url = '/movies/feed_movie?path=%s&action=refresh' % item
+            task_url = '/files/feed_movie?path=%s&action=refresh' % item
             Task(task_url).commit()                       
         
     if reload:
@@ -475,25 +475,25 @@ def modify(action, path_param=None):
     return beans.MultiLoader()    
 
     
-@movies.route('/movies/move_watched', methods=['GET', 'POST'])
+@files.route('/files/move_watched', methods=['GET', 'POST'])
 @common.jsonify
 def move_watched():
     return modify(action='move', path_param='MOVIES_WATCHED_DIR')
 
     
-@movies.route('/movies/move_ready', methods=['GET', 'POST'])
+@files.route('/files/move_ready', methods=['GET', 'POST'])
 @common.jsonify
 def move_ready():
     return modify(action='move', path_param='MOVIES_READY_DIR')
 
 
-@movies.route('/movies/delete', methods=['GET', 'POST'])
+@files.route('/files/delete', methods=['GET', 'POST'])
 @common.jsonify
 def delete():
     return modify(action='delete')        
 
 
-@movies.route('/movies/refresh', methods=['GET', 'POST'])
+@files.route('/files/refresh', methods=['GET', 'POST'])
 @common.jsonify
 def refresh():
     app.logger.debug('refreshing')
