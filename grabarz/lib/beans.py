@@ -118,7 +118,7 @@ class Slot(Bean):
     data = ['CENTER']
     margins = [0, 0, 0, 0]
     layout = 'fit'
-    scroll = 'NONE2'
+    scroll = 'NONE'
     url = '/layout/not-implemented'    
 
 class Fieldset(Bean):

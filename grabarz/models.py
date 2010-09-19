@@ -12,7 +12,7 @@ class ExtraModelFeatures(object):
         db.session.commit()
         
     def push(self):
-        db.session.add(self)                     
+        db.session.add(self)
 
 class Task(db.Model, ExtraModelFeatures):
     """ Task executed by cron """
@@ -69,13 +69,10 @@ class CallbackUpdate(db.Model, ExtraModelFeatures):
              
     @staticmethod       
     def dump():
-        db.session.expire_all()
+        db.session.flush()
         query = CallbackUpdate.query \
-                              .filter(CallbackUpdate.exe_time <= datetime.now() )
-
+                              .filter(CallbackUpdate.exe_time <= datetime.now())
                                       
         rv =  [o.bean for o in query]
-
         query.delete()
-        db.session.commit()
         return rv

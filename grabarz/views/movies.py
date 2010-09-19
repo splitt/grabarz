@@ -10,14 +10,12 @@ from copy import deepcopy
 from datetime import date
 
 import mechanize
+from imdb import IMDb
 from flask import Module, request
 
-from grabarz import app, models
-from grabarz.lib import torrent, beans
-from grabarz.lib.utils import post2get, download, HydraLog, jsonify
-from grabarz.cron import Task
+from grabarz import app, models, common
+from grabarz.lib import torrent, beans, utils
 
-from imdb import IMDb
 imdb = IMDb()
 movies = Module(__name__)
 IMDB_ICO = '<img src="/static/_imdb.png">'
@@ -93,7 +91,7 @@ MOVIE_DATA = dict(
 
 
 @movies.route('/movies/window-movies')
-@jsonify
+@common.jsonify
 def window_movies():
     """ Main movies window """
     return beans.Window(
@@ -142,7 +140,7 @@ def window_movies():
 
  
 @movies.route('/movies/feed_movie')
-@jsonify
+@common.jsonify
 def feed_movie():
     """Creates folder with movie data."""
                 
@@ -380,7 +378,7 @@ def get_movies_list(path, menu_options,title = None):
 
 
 @movies.route('/movies/ready')
-@jsonify
+@common.jsonify
 def ready():
     """ Displays list of downloaded movies """
     return get_movies_list(path = app.config['MOVIES_READY_DIR'],
@@ -389,7 +387,7 @@ def ready():
 
 
 @movies.route('/movies/downloading')
-@jsonify
+@common.jsonify
 def downloading():
     """ Displays list of current downloading movies """
     return get_movies_list(path = app.config['MOVIES_DOWNLOADING_DIR'],
@@ -397,7 +395,7 @@ def downloading():
     
 
 @movies.route('/movies/founded')
-@jsonify
+@common.jsonify
 def founded():
     """ Displays list of founded movies by robots """
     return get_movies_list(path = app.config['MOVIES_FOUND_DIR'],
@@ -407,7 +405,7 @@ def founded():
     
     
 @movies.route('/movies/watched')
-@jsonify
+@common.jsonify
 def watched():
     """ Displays list of watched movies """
     return get_movies_list(path = app.config['MOVIES_WATCHED_DIR'],
@@ -416,7 +414,7 @@ def watched():
     
         
 @movies.route('/movies/fetch-torrent-file', methods=['GET', 'POST'])
-@jsonify
+@common.jsonify
 def fetch_torrent_file():
     """ Reads information from torrent file and creates grabarz.ini 
     file for given movie."""
@@ -428,7 +426,7 @@ def fetch_torrent_file():
     
 
 @movies.route('/movies/get_context_menu', methods=['GET', 'POST'])
-@jsonify    
+@common.jsonify
 def get_context_menu():
     """ Filter specific menu options from all possible values. 
     Options are given in URL param. 
@@ -478,25 +476,25 @@ def modify(action, path_param=None):
 
     
 @movies.route('/movies/move_watched', methods=['GET', 'POST'])
-@jsonify    
+@common.jsonify
 def move_watched():
     return modify(action='move', path_param='MOVIES_WATCHED_DIR')
 
     
 @movies.route('/movies/move_ready', methods=['GET', 'POST'])
-@jsonify    
+@common.jsonify
 def move_ready():
     return modify(action='move', path_param='MOVIES_READY_DIR')
 
 
 @movies.route('/movies/delete', methods=['GET', 'POST'])
-@jsonify
+@common.jsonify
 def delete():
     return modify(action='delete')        
 
 
 @movies.route('/movies/refresh', methods=['GET', 'POST'])
-@jsonify    
+@common.jsonify
 def refresh():
     app.logger.debug('refreshing')
     return modify(action='refresh')

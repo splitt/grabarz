@@ -1,9 +1,8 @@
 ## -*- coding: utf-8 -*-
 import os
 from flask import Module, request
-from grabarz import app, db, models
+from grabarz import app, db, models, common
 from grabarz.lib import beans
-from grabarz.lib.utils import jsonify
 
 layout = Module(__name__)
 GIGABYTE = 1024 * 1024 * 1024
@@ -24,7 +23,7 @@ def get_folder_count(path):
 
 
 @layout.route('/layout/config')
-@jsonify
+@common.jsonify
 def config():
     return beans.Config(
         title="grabarz",
@@ -36,7 +35,7 @@ def config():
     
 
 @layout.route('/layout/slots')
-@jsonify
+@common.jsonify
 def slots():
     return beans.Slots(
         dict(
@@ -87,7 +86,7 @@ def slots():
 
     
 @layout.route('/layout/top')
-@jsonify
+@common.jsonify
 def top():
     return beans.Actions(
         links = [
@@ -124,7 +123,7 @@ def top():
         
 
 @layout.route('/layout/left')
-@jsonify
+@common.jsonify
 def left():
     return beans.Composite(        
         beans.Form(
@@ -183,7 +182,7 @@ def left():
     
     
 @layout.route('/layout/left-data', methods=['GET', 'POST'])
-@jsonify
+@common.jsonify
 def left_data():
     return beans.Data(
                       
@@ -296,7 +295,7 @@ def left_data():
 
 
 @layout.route('/layout/@center')
-@jsonify
+@common.jsonify
 def center():
     return beans.Slots(
          dict(
@@ -329,14 +328,14 @@ def center():
     
 
 @layout.route('/layout/tools')
-@jsonify
+@common.jsonify
 def tools():        
     return beans.Tabs(
         heading = None,
         tabs = [
             beans.Tab(                    
                 id = 'movies-ready',
-                url = '/calendar/calendar_canvas',
+                url = '/calendar/calendar-canvas',
                 title = 'Calendar',
                 params = dict(
                   icon = 'icon-calendar',    
@@ -363,7 +362,7 @@ def tools():
              
 
 @layout.route('/layout/bottom')
-@jsonify
+@common.jsonify
 def bottom():    
     ico_up = icon_factory('icon-arrow_up')
     speed_up = 'x.x'
@@ -394,7 +393,7 @@ def bottom():
 
 
 @layout.route('/layout/init')
-@jsonify
+@common.jsonify
 def init():        
     return beans.TimerRegister(
         name = 'messages',
@@ -405,7 +404,7 @@ def init():
     
     
 @layout.route('/layout/not-implemented', methods = ['GET', 'POST'])
-@jsonify
+@common.jsonify
 def not_implemented():        
     return beans.Dialog(
         title = 'Informacja',
@@ -423,7 +422,7 @@ def not_implemented():
     )
 
 @layout.route('/layout/dummy')
-@jsonify
+@common.jsonify
 def dummy():
     return beans.HTML(
         content = (request.args['fill'] + ' ') * 8000                      
@@ -431,6 +430,6 @@ def dummy():
     
     
 @layout.route('/layout/null', methods = ['POST', 'GET'])
-@jsonify
+@common.jsonify
 def null():        
     return beans.Null()

@@ -79,25 +79,24 @@ div.my-list-inner{
  border:0 !important;
  }
 
+/*
 #x-auto-9>.x-panel-bwrap div{
 	border:0 px;
+}*/
+#x-auto-89 .x-grid3-header, #x-auto-89 .x-grid3-header table{
+    width:100% !important;
 }
-
-/* tools */
-#x-auto-49>div, #x-auto-49 .x-panel-bwrap .x-tab-panel-body{
-	border:0 px;
-}
-
-
 
 /* Kalendarz */
+/*
+#x-auto-49>div, #x-auto-49 .x-panel-bwrap .x-tab-panel-body{
+    border:0 px;
+}
+
 #x-auto-89>.x-grid3{
 	border-right:1px solid #9ACD68;
 }
 
-#x-auto-89 .x-grid3-header, #x-auto-89 .x-grid3-header table{
-	width:100% !important;
-}
 
 #x-auto-89 .x-grid3-scroller{
 	margin-left:2px;
@@ -114,7 +113,7 @@ div.my-list-inner{
 .calendar-month{
 	width:100% !important;
 }
-
+*/
 .calendar-month table td {
     height: 38px;
     border-left: 1px solid #EDEDED;

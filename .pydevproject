@@ -3,7 +3,7 @@
 
 <pydev_project>
 <pydev_property name="org.python.pydev.PYTHON_PROJECT_VERSION">python 2.6</pydev_property>
-<pydev_property name="org.python.pydev.PYTHON_PROJECT_INTERPRETER">Default</pydev_property>
+<pydev_property name="org.python.pydev.PYTHON_PROJECT_INTERPRETER">python</pydev_property>
 <pydev_pathproperty name="org.python.pydev.PROJECT_SOURCE_PATH">
 <path>/grabarz</path>
 </pydev_pathproperty>
@@ -19,5 +19,6 @@
 <path>/home/mzajonz/workspace/grabarz/env/lib/python2.6/site-packages/Flask_SQLAlchemy-0.9.1-py2.6.egg</path>
 <path>/usr/lib/python2.6</path>
 <path>/usr/share/pyshared</path>
+<path>/usr/local/lib/python2.6/dist-packages</path>
 </pydev_pathproperty>
 </pydev_project>
