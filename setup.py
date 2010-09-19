@@ -17,6 +17,6 @@ setup(
 	    'imdbpy',
         'mechanize',
 	'tornado',
-	'fapws',
+	'blinker',
     ]
 )

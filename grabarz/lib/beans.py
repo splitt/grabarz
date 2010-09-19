@@ -3,7 +3,7 @@ from decorator import decorator
 from copy import deepcopy
 from flask import request
 
-def wrap(type, result):
+def _wrap(type, result):
     return dict(
         type=type,
         result=result,
@@ -16,7 +16,7 @@ def wrapped(type, *args, **kwargs):
     @param result: dict
     """
     def call(func, *args, **kwargs):
-        return wrap(type, func(*args, **kwargs))
+        return _wrap(type, func(*args, **kwargs))
     return decorator(call)
 
 
@@ -110,8 +110,16 @@ class Tree(Bean):
     
 class Reload(Bean):
     __type__ = 'reload'
+    slot = 'internal'
     silent = False
     
+class Slot(Bean):
+    id = 'slot-id'
+    data = ['CENTER']
+    margins = [0, 0, 0, 0]
+    layout = 'fit'
+    scroll = 'NONE2'
+    url = '/layout/not-implemented'    
 
 class Fieldset(Bean):
     type = "fieldset"
@@ -126,7 +134,7 @@ class Link(Bean):
 
 
 @wrapped('composite')
-def Composite(*args):
+def Composite(*args, **kwargs):    
     result = []
     for a in args:
         if '__conditional__' in a and not a['__conditional__'].isValid():
@@ -213,6 +221,9 @@ class MultiField(Bean):
     fielddefs = []
     label = ""
 
+
+def Null():
+    return Composite()
 
 class Window(Bean):
     __type__ = 'window'

@@ -1,17 +1,13 @@
 ## -*- coding: utf-8 -*-
 import os
-from flask import Module, session, g, request, redirect
-from grabarz import app, models
+from flask import Module, request
+from grabarz import app, db, models
 from grabarz.lib import beans
-from grabarz.lib.beans import (Config, Desktop, MultiLoader, HTML, Menu, 
-                               Actions, Composite, Window, TimerRegister, 
-                               Infobox, Slots, Reload)
-from grabarz.lib.utils import jsonify, fixkeys
-
+from grabarz.lib.utils import jsonify
 
 layout = Module(__name__)
-
 GIGABYTE = 1024 * 1024 * 1024
+    
 
 def icon_factory(ico = 'icon-arrow_down'):
     return """
@@ -20,16 +16,24 @@ def icon_factory(ico = 'icon-arrow_down'):
         </span>
     """ % ico
 
+
+def get_folder_count(path):
+    """ Returns count of movies in given path """
+    return str(len(os.listdir(path)))
+
+
+
 @layout.route('/layout/config')
 @jsonify
 def config():
-    return Config(
+    return beans.Config(
         title="grabarz",
         default_errorwindowtitle="Wystąpił błąd aplikacji",
         debug=app.config['DEBUG'],
         theme="olive", #slate
         history_enabled=True,
     )
+    
 
 @layout.route('/layout/slots')
 @jsonify
@@ -111,11 +115,12 @@ def top():
             beans.MenuButton(
                 icon = 'icon-question',
                 title = 'About',
-                link = beans.Link(),
+                link = beans.Link(
+                    url = '/calendar/calendar_window'
+                ),
             ),                                                
         ]                      
     )
-        
         
 
 @layout.route('/layout/left')
@@ -176,11 +181,10 @@ def left():
     
     )
     
+    
 @layout.route('/layout/left-data', methods=['GET', 'POST'])
 @jsonify
 def left_data():
-    
-
     return beans.Data(
                       
         #:--- Downloading ---
@@ -291,7 +295,6 @@ def left_data():
     )    
 
 
-    
 @layout.route('/layout/@center')
 @jsonify
 def center():
@@ -310,7 +313,7 @@ def center():
          dict(
              heading = 'Tools',
              id='tools',
-             data=['SOUTH', 300],
+             data=['SOUTH', 351],
              margins=[0, 0, 0, 0],
              collapsed = True,
              collapsible = True,             
@@ -333,7 +336,7 @@ def tools():
         tabs = [
             beans.Tab(                    
                 id = 'movies-ready',
-                url = '/layout/null',
+                url = '/calendar/calendar_canvas',
                 title = 'Calendar',
                 params = dict(
                   icon = 'icon-calendar',    
@@ -358,7 +361,6 @@ def tools():
         ]        
     ) 
              
-
 
 @layout.route('/layout/bottom')
 @jsonify
@@ -390,21 +392,17 @@ def bottom():
         """ % locals()          
     )
 
-def get_folder_count(path):
-    """ Returns count of movies in given path """
-    return str(len(os.listdir(path)))
-
 
 @layout.route('/layout/init')
 @jsonify
-def init():    
-    
-    return TimerRegister(
+def init():        
+    return beans.TimerRegister(
         name = 'messages',
-        action = '/layout/updates',
+        action = '/layout/null',
         interval =  app.config['UPDATE_INTERVAL'],
         slot = 'internal',                        
     )
+    
     
 @layout.route('/layout/not-implemented', methods = ['GET', 'POST'])
 @jsonify
@@ -420,26 +418,19 @@ def not_implemented():
                     url = '/layout/null',
                     slot = 'internal',
                 )
-            )
-                   
+            )                   
         ]                      
     )
 
 @layout.route('/layout/dummy')
 @jsonify
-def dummy():        
+def dummy():
     return beans.HTML(
         content = (request.args['fill'] + ' ') * 8000                      
     )
     
+    
 @layout.route('/layout/null', methods = ['POST', 'GET'])
 @jsonify
 def null():        
-    return beans.MultiLoader()
-
-@layout.route('/layout/updates')
-@jsonify
-def updates():    
-    beans = models.CallbackUpdate.dump()
-    
-    return Composite(*beans)
+    return beans.Null()

@@ -44,24 +44,122 @@ div.my-list-inner{
 #x-auto-40{
 	z-index: 10;
 }
-.x-grid3-hd-row{
-	display:None;
-}
+
 
 
 .x-grid3-cell-inner .x-tree3-el img{
 	width:10px !important;
 }
 
+.x-border{
+	border:0 !important;
+
+}
 /* left-menu*/
-#x-auto-25 .x-panel-body{
+
+#x-auto-9 .x-grid3-hd-row{
+    display:None;
+}
+#x-auto-9 .x-panel-body{
 	border:0 !important;
 }
 
-#x-auto-25 .x-panel-bwrap{
+#x-auto-9 .x-panel-bwrap{
 	border:1px solid #9ACD68;
 }
 
-#x-auto-25 .x-panel-btns{
+#x-auto-9 .x-panel-btns{
 	margin-bottom:15px;
+}
+
+#x-auto-9 .x-small-editor{
+	border:0 !important;
+}
+ #x-auto-9 .x-panel-bwrap .x-panel-body{
+ border:0 !important;
+ }
+
+#x-auto-9>.x-panel-bwrap div{
+	border:0 px;
+}
+
+/* tools */
+#x-auto-49>div, #x-auto-49 .x-panel-bwrap .x-tab-panel-body{
+	border:0 px;
+}
+
+
+
+/* Kalendarz */
+#x-auto-89>.x-grid3{
+	border-right:1px solid #9ACD68;
+}
+
+#x-auto-89 .x-grid3-header, #x-auto-89 .x-grid3-header table{
+	width:100% !important;
+}
+
+#x-auto-89 .x-grid3-scroller{
+	margin-left:2px;
+}
+
+#x-auto-49 .x-panel-bwrap{
+    border:0 px;
+}
+
+#x-auto-49 .x-panel-body-noheader{
+    border:0 px;
+}
+
+.calendar-month{
+	width:100% !important;
+}
+
+.calendar-month table td {
+    height: 38px;
+    border-left: 1px solid #EDEDED;
+}
+.calendar-month .calendar-icon {
+    padding-left: 17px;
+    color: #666;
+    font-size: 9px;
+    margin: 2px 0 0 0;
+}
+.calendar-note-text {
+    width: 100%;
+    white-space: normal !important;
+}
+
+.calendar-note-row-nolink div.x-grid3-cell-inner,
+.calendar-note-row div.x-grid3-cell-inner {
+    white-space: normal !important;
+}
+.calendar-note-row,
+.calendar-note-row-nolink {
+    background: #f9edb1;
+    border: 1px solid #f0b878;
+    border-top: 1px solid #f5dd76;
+}
+html .calendar-note-row:hover {
+    background: #f1d194;
+}
+.calendar-note-row-nolink {
+    background: #fdf7dd;
+    border: 1px solid #fedfb5;
+    border-top: 1px solid #f9edb1;
+}
+.calendar-note-row-own {
+    background: #e9f9ff;
+    border: 1px solid #97bdec;
+    border-top: 1px solid #d1ebff;
+}
+.calendar-note-row-own-link {
+    background: #d1ebff;
+    border: 1px solid #97bdec;
+    border-top: 1px solid #d1ebff;
+}
+.calendar-note-row .application {
+    text-decoration: underline;
+    color: #24c;
+    cursor: pointer;
 }

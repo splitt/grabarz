@@ -8,18 +8,13 @@ from os.path import join, split
 import ConfigParser
 from copy import deepcopy
 from datetime import date
-from pprint import pformat
 
 import mechanize
-from pyquery import PyQuery as pq
-from flask import Module, request, session, g, redirect
+from flask import Module, request
 
 from grabarz import app, models
 from grabarz.lib import torrent, beans
-from grabarz.lib.beans import (Config, Desktop, MultiLoader, HTML, Menu, 
-                               Listing, Window, Form, Button, Link, CharField,
-                               Infobox, MenuItems, MenuItem, Reload,Composite)
-from grabarz.lib.utils import jsonify, post2get, download, HydraLog
+from grabarz.lib.utils import post2get, download, HydraLog, jsonify
 from grabarz.cron import Task
 
 from imdb import IMDb
@@ -29,7 +24,7 @@ IMDB_ICO = '<img src="/static/_imdb.png">'
 FILMWEB_ICO = '<img src="/static/_filmweb.ico">'
 
 MENU_OPTIONS = [
-    ('refresh', MenuItem(
+    ('refresh', beans.MenuItem(
                     label = "odśwież dane",
                     icon = "icon-arrow_refresh",
                     link = dict(
@@ -39,7 +34,7 @@ MENU_OPTIONS = [
                 ),
     ),
     
-    ('start_downloading', MenuItem(
+    ('start_downloading', beans.MenuItem(
                             label = "Zacznij pobieranie",
                             icon = "icon-television_delete",
                             link = dict(
@@ -49,7 +44,7 @@ MENU_OPTIONS = [
                         ),
     ),    
     
-    ('move_watched', MenuItem(
+    ('move_watched', beans.MenuItem(
                         label = "przenieś do obejrzanych",
                         icon = "icon-arrow_down",
                         link = dict(
@@ -59,7 +54,7 @@ MENU_OPTIONS = [
                     ),
     ),
     
-    ('move_ready', MenuItem(
+    ('move_ready', beans.MenuItem(
                         label = "przenieś do gotowych",
                         icon = "icon-eye",
                         link = dict(
@@ -71,7 +66,7 @@ MENU_OPTIONS = [
     
     ('separator', dict(type = 'separator')),
         
-    ('delete', MenuItem(
+    ('delete', beans.MenuItem(
                     label = "Usuń z dysku",
                     icon = "icon-delete",
                     link = dict(
@@ -147,6 +142,7 @@ def window_movies():
 
  
 @movies.route('/movies/feed_movie')
+@jsonify
 def feed_movie():
     """Creates folder with movie data."""
                 
@@ -274,7 +270,7 @@ def feed_movie():
         
     hydra_log.emit(u'Utworzono plik ini<br/><br/>KONIEC')
     
-    models.CallbackUpdate(Reload(slot = "CONTENT")).commit()
+    models.CallbackUpdate(beans.Reload(slot = "CONTENT")).commit()
     hydra_log.close()
     
     return 'done'
@@ -336,7 +332,7 @@ def get_movies_list(path, menu_options,title = None):
         
     menu_options = ','.join(menu_options)
                 
-    return Composite(Listing(
+    return beans.Composite(beans.Listing(
          heading=title,
          paging = False,         
          menu_url = '/movies/get_context_menu?items=%s' % menu_options,
@@ -427,14 +423,8 @@ def fetch_torrent_file():
     
     file = torrent.get_torrent_filenames(request.form['torrent_src'])[0]        
     path = join(app.config['MOVIES_DOWNLOADING_DIR'], 'movies')
-
     models.Task('/movies/feed_movie?file=%s&path=%s' % (file, path)).commit()
-    
-    return MultiLoader()
-            
-#    return Infobox(                             
-#        text = 'Rozpoczęto pobiernia filmu %s file' % file,
-#    )
+    return beans.Null()
     
 
 @movies.route('/movies/get_context_menu', methods=['GET', 'POST'])
@@ -453,12 +443,12 @@ def get_context_menu():
                 option['link']['url'] = option['link']['url'] % post2get()
             menu_options.append(option)
              
-    return MenuItems(
+    return beans.MenuItems(
         *menu_options            
     )
 
 
-def modify(action, path_param=None):
+def modify(action, path_param=None):    
     """ Function to move movies to location specified in "destiny_conf_dir"
     argument. Movies(absolute paths) are given in URL param.
     """
@@ -480,11 +470,12 @@ def modify(action, path_param=None):
             Task(task_url).commit()                       
         
     if reload:
-        return Composite(
-            Reload(slot = 'LEFT'),
-            Reload(slot = 'CONTENT'),
+        return beans.Composite(
+            beans.Reload(slot = 'LEFT'),
+            beans.Reload(slot = 'CONTENT'),
         )
-    return MultiLoader()    
+    return beans.MultiLoader()    
+
     
 @movies.route('/movies/move_watched', methods=['GET', 'POST'])
 @jsonify    
@@ -499,7 +490,7 @@ def move_ready():
 
 
 @movies.route('/movies/delete', methods=['GET', 'POST'])
-@jsonify    
+@jsonify
 def delete():
     return modify(action='delete')        
 

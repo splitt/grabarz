@@ -9,7 +9,10 @@ class ExtraModelFeatures(object):
     def commit(self):
         db.session.expire_all()
         db.session.add(self)
-        db.session.commit()         
+        db.session.commit()
+        
+    def push(self):
+        db.session.add(self)                     
 
 class Task(db.Model, ExtraModelFeatures):
     """ Task executed by cron """
@@ -45,7 +48,7 @@ class Task(db.Model, ExtraModelFeatures):
             
         db.session.commit() 
             
-        urllib.urlopen(app.config['URL_ROOT'] + self.url)
+        urllib.urlopen(app.config['URL_ROOT'] + self.url+'&task=1')
                 
     def __repr__(self):
         return "<Task %s>" % self.execute_time

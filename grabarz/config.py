@@ -3,7 +3,7 @@ from os.path import join
 
 class Config(object):
     SECRET_KEY = '^&@&*$@#BRKFJ*(@#RUY(*#FH#YUBG#*F@&R*G#GF@&*#FG'
-    UPDATE_INTERVAL = 1000
+    UPDATE_INTERVAL = 100000
     
 class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'sqlite:////home/mzajonz/workspace/grabarz/db/devel.db'
