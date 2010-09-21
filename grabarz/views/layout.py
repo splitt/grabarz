@@ -40,40 +40,40 @@ def config():
 @common.jsonify
 def slots():
     return beans.Slots(
-        dict(
+        beans.Slot(
             id='top',
-            data=['NORTH', 20],
-            margins=[5, 5, 5, 5],
+            data=['NORTH', 30],
+            margins=[5, 5, 0, 5],
             scroll='NONE',            
             link = beans.Link(
                 url="/layout/top",
             )
         ),          
         
-        dict(
+        beans.Slot(
             id='left',
             heading = "Filter",
             collapsible = True,
             data=['WEST', 140],
-            margins=[10, 0, 0, 5],
+            margins=[5, 0, 0, 5],
             scroll='NONE',
             link = beans.Link(
                 url="/layout/left",
             )
         ),
         
-        dict(
+        beans.Slot(
             id='@center',
             split=True,
             data=['CENTER', 220],
-            margins=[5, 5, 0, 5],
+            margins=[0, 5, 0, 5],
             scroll='NONE',
             link = beans.Link(
                 url="/layout/@center",
             )
         ),
         
-        dict(
+        beans.Slot(
             id='bottom',
             split=True,
             data=['SOUTH', 20],
@@ -82,8 +82,7 @@ def slots():
             link = beans.Link(
                 url="/layout/bottom",
             )            
-        ),     
-        
+        ),        
     )
 
     
@@ -143,8 +142,7 @@ def left():
                 beans.Button(
                     label = 'apply',
                     link = beans.Link()                                    
-                )
-                       
+                )                       
             ]           
         ),
         
@@ -188,7 +186,7 @@ def left():
 def left_data():
     return beans.Data(
                       
-        #:--- Downloading ---
+        #:--- All files ---
         dict(             
             id = '--All files--',
             
@@ -201,99 +199,116 @@ def left_data():
                 has_children = False,
                 uid = 'all',
                 slot = 'internal',
-                link = beans.Link(),
+                link = beans.Link(
+                    url = '/files/files_listing?filter=all&type=all',
+                    slot = 'files-list',                   
+                ),
                 
  
             )
         ),
-           #:--- Downloading ---
-                    dict(             
-                        id = 'Downloading',                                                    
-                        __params__ = dict(
-                            link = beans.Link(),
-                            has_children = False,
-                            uid = 'downloading',
-                            slot = 'internal',                            
-                        ),
-                        
-                        ico = dict(
-                            link = beans.Link(),
-                            slot = 'internal', 
-                            icon = 'icon-arrow_down',                                   
-                        )
-                    ),      
-                    
-                    #:--- Uploading ---
-                    dict(             
-                        id = 'Uploading',                                                    
-                        __params__ = dict(
-                            has_children = False,
-                            uid = 'downloading',
-                            slot = 'internal',
-                            link = beans.Link(),
-                        ),
-                        
-                        ico = dict(
-                            link = beans.Link(),
-                            slot = 'internal',                             
-                            icon = 'icon-arrow_up',
-                                   
-                        )
-                    ),                     
-                                        
-                    #:--- Queued ---
-                    dict(             
-                        id = 'Queued',                                                    
-                        __params__ = dict(
-                            has_children = False,
-                            uid = 'queued',
-                            slot = 'internal',
-                            link = beans.Link(),
-                        ),
-                        ico = dict(
-                            url = "/system/listing",
-                            slot = 'internal', 
-                            icon = 'icon-hourglass_go',
-                                   
-                        )       
-                                                
-                    ),                          
-                                  
-                    #:--- Completed ---
-                    dict(             
-                        id = 'Completed',                                                    
-                        __params__ = dict(
-                            has_children = False,
-                            uid = 'completed',
-                            slot = 'internal',
-                            link = beans.Link(),
-                        ),
-                        ico = dict(
-                            link = beans.Link(),
-                            slot = 'internal', 
-                            icon = 'icon-flag_green',
-                                   
-                        )                        
-                    ),
+       #:--- Downloading ---
+        dict(             
+            id = 'Downloading',                                                    
+            __params__ = dict(
+                has_children = False,
+                uid = 'downloading',
+                slot = 'internal',
+                link = beans.Link(
+                    url = '/files/files_listing?filter=all&type=downloading',
+                    slot = 'files-list',                   
+                ),
+            ),
+            
+            ico = dict(
+                link = beans.Link(),
+                slot = 'internal', 
+                icon = 'icon-arrow_down',                                   
+            )
+        ),      
+        
+        #:--- Uploading ---
+        dict(             
+            id = 'Uploading',                                                    
+            __params__ = dict(
+                has_children = False,
+                uid = 'downloading',
+                slot = 'internal',
+                link = beans.Link(
+                    url = '/files/files_listing?filter=all&type=uploading',
+                    slot = 'files-list',                   
+                ),
+            ),
+            
+            ico = dict(
+                link = beans.Link(),
+                slot = 'internal',                             
+                icon = 'icon-arrow_up',
+                       
+            )
+        ),                     
+                            
+        #:--- Queued ---
+        dict(             
+            id = 'Queued',                                                    
+            __params__ = dict(
+                has_children = False,
+                uid = 'queued',
+                slot = 'internal',
+                link = beans.Link(
+                    url = '/files/files_listing?filter=all&type=queued',
+                    slot = 'files-list',                   
+                ),
+            ),
+            ico = dict(
+                url = "/system/listing",
+                slot = 'internal', 
+                icon = 'icon-hourglass_go',                       
+            )       
                                     
-                    
-                    #:--- Founded ---
-                    dict(             
-                        id = 'Founded',                                                    
-                        __params__ = dict(
-                            has_children = False,
-                            uid = 'queued',
-                            slot = 'internal',
-                            link = beans.Link(),
-                        ),
-                        ico = dict(
-                            url = "/system/listing",
-                            slot = 'internal', 
-                            icon = 'icon-zoom',
-                                   
-                        )                                            
-                    ),                          
-    )    
+        ),                          
+                      
+        #:--- Completed ---
+        dict(             
+            id = 'Completed',                                                    
+            __params__ = dict(
+                has_children = False,
+                uid = 'completed',
+                slot = 'internal',
+                link = beans.Link(
+                    url = '/files/files_listing?filter=all&type=completed',
+                    slot = 'files-list',                   
+                ),                
+            ),
+            ico = dict(
+                link = beans.Link(),
+                slot = 'internal', 
+                icon = 'icon-flag_green',
+                       
+            )                        
+        ),
+                        
+        
+        #:--- Founded ---
+        dict(             
+            id = 'Found',                                                    
+            __params__ = dict(
+                has_children = False,
+                uid = 'queued',
+                slot = 'internal',
+                link = beans.Link(
+                    url = '/files/files_listing?filter=all&type=found',
+                    slot = 'files-list',                   
+                ),
+            ),
+            ico = dict(
+                url = "/system/listing",
+                slot = 'internal', 
+                icon = 'icon-zoom',
+                       
+            )                                            
+        ),                          
+    )
 
 
 @layout.route('/layout/@center')
@@ -301,13 +316,13 @@ def left_data():
 def center():
     return beans.Slots(
          dict(
-             id='mainlist',
+             id='files-list',
              data=['CENTER'],
              margins=[5, 0, 5, 0],
              scroll='AUTO',
              split = True,
              link = beans.Link(
-                url='/layout/dummy?fill=mainlist',
+                url='/files/files_listing?filter=all&type=all',
              ),                          
          ),
          
@@ -336,7 +351,7 @@ def tools():
         heading = None,
         tabs = [
             beans.Tab(                    
-                id = 'movies-ready',
+                id = 'calendar-canvas',
                 url = '/calendar/calendar-canvas',
                 title = 'Calendar',
                 params = dict(
@@ -344,7 +359,7 @@ def tools():
                 ),
             ),
             beans.Tab(                    
-                id = 'movies-ready',
+                id = 'folder-explore',
                 url = '/layout/null',
                 title = 'Files explorel',
                 params = dict(
@@ -396,7 +411,7 @@ def bottom():
 
 @layout.route('/layout/init')
 @common.jsonify
-def init():        
+def init():            
     return beans.TimerRegister(
         name = 'messages',
         action = '/layout/null',

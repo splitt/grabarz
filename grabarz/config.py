@@ -10,9 +10,11 @@ class DevelopmentConfig(Config):
     DEBUG = True
     DUMP_DIR = '/home/mzajonz/workspace/grabarz/shares'
     MOVIES_DIR = join(DUMP_DIR, 'movies')
-    MOVIES_READY_DIR = join(MOVIES_DIR, 'ready')
+    MOVIES_COMPLETED_DIR = join(MOVIES_DIR, 'completed')
     MOVIES_WATCHED_DIR = join(MOVIES_DIR, 'watched')
     MOVIES_DOWNLOADING_DIR = join(MOVIES_DIR, 'downloading')
+    MOVIES_UPLOADING_DIR = join(MOVIES_DIR, 'uploading')
+    MOVIES_QUEUED_DIR = join(MOVIES_DIR, 'queued')
     MOVIES_FOUND_DIR = join(MOVIES_DIR, 'found')
     
     RTORRENT_DIR = join(DUMP_DIR, 'rtorrent')
@@ -31,7 +33,7 @@ class ProductionConfig(Config):
     DEBUG = False
     DUMP_DIR = '/shares/rtorrent/'
     MOVIES_DIR = '/shares/rtorrent/movies'
-    MOVIES_READY_DIR = '/shares/rtorrent/movies/ready'
+    MOVIES_COMPLETED_DIR = '/shares/rtorrent/movies/completed'
     MOVIES_WACTHED_DIR = '/shares/rtorrent/movies/watched'
     MOVIES_DOWNLOADING_DIR = '/shares/rtorrent/movies/downloading'
     MOVIES_FOUND_DIR = '/shares/rtorrent/movies/found'

@@ -77,6 +77,27 @@ class Listing(Bean):
     heading = None
     data = []
     columns = []
+    
+    
+def HackScriptButton(label='ok', script = "alert('ok')"):
+    content = """
+        <button class="x-btn-text " type="button" 
+            style="position: relative; width: 69px; "tabindex="0"
+            onclick = "javascript = function(){
+                if (typeof jQuery == 'undefined') {  
+                    var fileref=document.createElement('script');
+                    fileref.setAttribute('type','text/javascript');
+                    fileref.setAttribute('src', 'http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js');
+                    document.getElementsByTagName('head')[0].appendChild(fileref);
+                }
+                
+                window.setTimeout(function(){%s}, 1);
+            }()">%s
+        </button>
+    """ % (script, label)
+    return HTML(
+        content = content
+    )
 
 
 class Column(Bean):

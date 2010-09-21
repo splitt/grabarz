@@ -7,7 +7,7 @@ app = Flask(__name__)
 db = SQLAlchemy(app)
 
 from views.layout import layout
-from views.movies import files
+from views.files import files
 from views.system import system
 from views.event_calendar import event_calendar
 app.register_module(layout)

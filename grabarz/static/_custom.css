@@ -1,8 +1,21 @@
+
+table.row_expander td{
+	padding:5px;
+
+}
+
+table.row_expander{
+	font-size:12px;
+}
+table.row_expander td.ratings{
+    width:90px;
+    padding-botton:2px;
+}
 div.movie_row *{
-	height:143px !important;
+	/*height:143px !important;*/
 	white-space:normal !important;	
-	text-align: center;
-	vertical-align: middle !important;
+	text-align: left;
+	vertical-align: middle;
 }
 
 div.movie_row .x-grid3-col-title{
@@ -31,6 +44,9 @@ div.movie_row img{
 	background-image: none !important;
 }
 
+x-grid3-row-expander{
+	vertical-align: top !important;
+}
 .discStats{
 	float: right;
 	margin-right: 100px;

@@ -12,6 +12,7 @@ from datetime import date
 import mechanize
 from imdb import IMDb
 from flask import Module, request
+from pyquery import PyQuery as pq
 
 from grabarz import app, models, common
 from grabarz.lib import torrent, beans, utils
@@ -52,11 +53,11 @@ MENU_OPTIONS = [
                     ),
     ),
     
-    ('move_ready', beans.MenuItem(
+    ('move_completed', beans.MenuItem(
                         label = "przenieś do gotowych",
                         icon = "icon-eye",
                         link = dict(
-                            url = "/files/move_ready%s",
+                            url = "/files/move_completed%s",
                             slot = "CONTENT",               
                         )
                     ),
@@ -75,7 +76,16 @@ MENU_OPTIONS = [
     ),            
 ]
 
+MENU_OPTIONS_MAP = dict(
+    completed = ['refresh', 'delete', 'separator','move_watched'],
+    downloading = ['refresh','separator', 'delete'],
+    uploading = ['refresh','separator', 'delete'],
+    found = ['refresh', 'start_downloading', 'separator','delete'],
+    queued = ['refresh', 'start_downloading', 'separator','delete'],
+    watched = ['refresh', 'separator', 'move_completed', 'delete'],           
+)
 
+    
 MOVIE_DATA = dict(
         imdb_rating = '',
         imdb_data = '',
@@ -90,55 +100,6 @@ MOVIE_DATA = dict(
     )
 
 
-@files.route('/files/window-movies')
-@common.jsonify
-def window_movies():
-    """ Main movies window """
-    return beans.Window(
-        heading = 'filmy',
-        height = 0.8,
-        width = 0.9,
-        object = beans.Tabs(
-            heading = None,
-            tabs = [
-                beans.Tab(                    
-                    id = 'movies-ready',
-                    url = '/make_slot?url=/files/ready',
-                    title = 'Gotowe do obejrzenia',
-                    params = dict(
-                      icon = 'icon-eye',    
-                    ),
-                ),
-                beans.Tab(
-                    id = 'movies-downloading',
-                    url = '/make_slot?url=/files/downloading',
-                    title = 'Pobierane',
-                    params = dict(
-                      icon = 'icon-arrow_down',            
-                    ),                    
-                ),                
-                beans.Tab(
-                    id = 'movies-founded',
-                    url = '/make_slot?url=/files/founded',
-                    title = 'Znalezione',
-                    params = dict(
-                      icon = 'icon-zoom',            
-                    ),                    
-                ),
-                beans.Tab(
-                    id = 'movies-watched',
-                    url = '/make_slot?url=/files/watched',
-                    title = 'Obejrzane',
-                    params = dict(
-                      icon = 'icon-television_delete',            
-                    ),                    
-                ),
-            ]        
-        )                        
-    )
-    
-
- 
 @files.route('/files/feed_movie')
 @common.jsonify
 def feed_movie():
@@ -150,8 +111,8 @@ def feed_movie():
     #: if file passed than adding now torrent, otherwise only refreshing
     title = file or path.split('/')[-1]
     
-    hydra_log = HydraLog('feeding_log|'+title, 
-                         "Pobieranie definicji filmu '%s'" % title)
+    hydra_log = common.HydraLog('feeding_log|'+title, 
+                                "Pobieranie definicji filmu '%s'" % title)
     
     hydra_log.emit(u'Rozpoczynam procesowanie filmu "%s" ' % title)        
     data = dict(MOVIE_DATA)  
@@ -216,7 +177,7 @@ def feed_movie():
                 
     #: Saving cover url
     if imdb_data.get('cover url'):    
-        download(imdb_data['cover url'], join(full_work_dir, 'cover.jpg'))
+        utils.download(imdb_data['cover url'], join(full_work_dir, 'cover.jpg'))
                      
     #: Searching in Filmweb site
     hydra_log.emit(u'Szukam definicji w bazie Filmweb')
@@ -272,146 +233,206 @@ def feed_movie():
     hydra_log.close()
     
     return 'done'
+
+def get_torrent_info(init_data, path):
+    return dict(
+        name="name",
+        status="status",
+        size="size",
+        dl="dl",
+        ul="ul",
+        ratio="ratio",
+        eta="eta",
+        seed_peers="seed_peers",
+        priority="priority",           
+        __params__  = dict(
+            style = 'movie_row',
+#            uid = path,
+        )        
+    )
+    
+    
+def get_expander_info(init_data, path):
+
+    ratings = '%s Imdb: <b>%s</b></span></br>' % (IMDB_ICO, 
+                                                  init_data['imdb_rating'])
+    
+    imdb_rating = average = float(init_data['imdb_rating'])
+    
+    if init_data.get('filmweb_rating'):
+        ratings += (
+            '<a target="_blank" href="%s">' % init_data['filmweb_url'] +
+            '<span> %s Filmweb:&nbsp;' % FILMWEB_ICO +
+            '<b>%s</b></span></a></br>' % init_data['filmweb_rating'] 
+        )
+                        
+        filmweb_rating = float(init_data.get('filmweb_rating'))                         
+        average = str((imdb_rating + filmweb_rating) / 2)
+                    
+    ratings = (
+        '<!--%s-->' % average + 
+        u'<span class="average"> Średnia: %s</span></br></br>' % average +
+        ratings
+    )            
+         
+    desc = '<br/>'.join([
+        u"<span class='title'>%s (%s)</span>" % \
+            (init_data['title'], init_data.get('polish_title') or ''), 
+        '<b>Rok produkcji:</b> %s ' % init_data['year'],
+        '<b>Czas:</b> %s minut '% init_data['runtime'],
+        '<b>Gatunki</b> %s' % init_data['genres'],            
+        (init_data.get('description') or '')[:700],            
+    ])    
+    cover = '<img src="%s"/>' % join('_MOVIES_DIR',split(path)[-1],
+                                     init_data['title'],
+                                     'cover.jpg')
+    html = "<table class='row_expander'><tr>%s</tr></table>"
+    cells = ''.join("<td class='%s'>%s</td>" % (c, s) 
+                    for c, s in zip(['cover','ratings', 'desc'], 
+                                    [cover,ratings, desc]))
+    return html % cells
             
     
-
-def get_movies_list(path, menu_options,title = None):
-    """ Listing movies for given path in filesystem """    
+@files.route('/files/files_listing')
+@common.jsonify
+def files_listing():
+    """ Listing files for given type and filter in filesystem """    
+    filter = request.args['filter']
+    type = request.args['type']
+    title = request.args.get('title') 
+    
+    dirs = []
+    menu_options = []
+    
+    if filter in ['movies', 'all']:
+        if type == 'all':
+            menu_options = []
+            dirs.extend([
+                'MOVIES_COMPLETED_DIR', 'MOVIES_WATCHED_DIR',
+                'MOVIES_DOWNLOADING_DIR','MOVIES_FOUND_DIR',
+            ])
+        else:
+            menu_options = MENU_OPTIONS_MAP[type]
+            dirs.append('MOVIES_%s_DIR' % type.upper())
+                                      
     data = []
+    paths = [app.config[dir] for dir in dirs]        
     config = ConfigParser.RawConfigParser()
     
-    #: Extract data from ini files
-    for i, dir in enumerate( os.listdir(path)):                            
-        dir_path = join(path, dir) 
-        config.read(join(dir_path, 'grabarz.ini'))
-        d = dict(config.items('data'))
-        
-        d = dict( (k, v.decode('utf-8')) for k, v in d.items())
-        ratings = '%s Imdb: <b>%s</b></span></br>' % (IMDB_ICO, d['imdb_rating'])
-        
-        imdb_rating = average = float(d['imdb_rating'])
-        
-        if d.get('filmweb_rating'):
-            ratings += u''.join([
-                '<a target="_blank" href="%s">' % d['filmweb_url'],
-                '<span> %s Filmweb:' % FILMWEB_ICO,
-                '<b>%s</b></span></a></br>' % d['filmweb_rating'] 
-            ])
+    for path in paths:
+        #: Extract data from ini files
+        for dir in os.listdir(path):                            
+            dir_path = join(path, dir) 
+            config.read(join(dir_path, 'grabarz.ini'))
+            ini_data = dict(config.items('data'))            
+            ini_data = dict( (k, v.decode('utf-8')) for k, v in ini_data.items())
             
-            
-            filmweb_rating = float(d.get('filmweb_rating')) 
-                        
-            average = str((imdb_rating + filmweb_rating) / 2)
-                        
-        ratings = (
-            '<!--%s-->' % average + 
-            u'<span class="average"> Średnia: %s</span></br>' % average +
-            ratings
-        )
+            row = get_torrent_info(ini_data, path)
+            row['expander'] = get_expander_info(ini_data, path)
+            row['__expander__'] = 'false'
+                                    
+            data.append(row)
+                            
+    return beans.Composite(
+#        beans.HackScriptButton(
+#            script = """
+#                $('.x-tool-down').click();                
+#                $('.x-grid3-row-expander').click();
+#                                                    
+#            """,
+#            label = 'Rozwiń',            
+#        ),
+        beans.Listing(
+             heading = title,
+             paging = False,         
+             menu_url = '/files/get_context_menu?items=%s' % ','.join(menu_options),
+             autoexpand_column = "title",
+             param_name = 'uid',
+             columns=[
+                dict(
+                     renderer = 'expander',
+                     expander='{expander}',
+                ),                  
+                dict(
+                     renderer = 'numberer',
+                ),
+                dict(
+                     renderer = 'checkbox',                 
+                ),
+                dict(
+                     width="300",
+                     title="Name",
+                     id="name",
+                ),
+                dict(
+                     width="100",
+                     title="Status",
+                     id="status",
+                ),
+                dict(
+                     width="100",
+                     title="Size",
+                     id="size",
+                ),
+                dict(
+                     width="100",
+                     title="DL",
+                     id="dl",
+                ),
+                dict(
+                     width="100",
+                     title="Ul",
+                     id="ul",
+                ),
+                dict(
+                     width="100",
+                     title="Ratio",
+                     id="ratio",
+                ),
+                dict(
+                     width="100",
+                     title="ETA",
+                     id="eta",
+                ),
+                dict(
+                     width="100",
+                     title="seed_peers",
+                     id="seed_peers",
+                ),  
+                dict(
+                     width="100",
+                     title="Priority",
+                     id="priority",
+                ),               
                 
-        d['ratings'] = ratings
-             
-        d['title'] = '<br/>'.join([
-            u"<span class='title'>%s (%s)</span>" % \
-                (d['title'], d.get('polish_title') or ''), 
-            '<b>Rok produkcji:</b> %s ' % d['year'],
-            '<b>Czas:</b> %s minut '% d['runtime'],
-            '<b>Gatunki</b> %s' % d['genres'],            
-            (d.get('description') or '')[:700],            
-        ])
-        
-        d['cover'] = '<img src="%s"/>' % join('_MOVIES_DIR',split(path)[-1], 
-                                              dir, 'cover.jpg')
-        d['__params__'] = dict(
-            style = 'movie_row',
-            uid = dir_path,
-            )    
-        data.append(d)
-        
-    menu_options = ','.join(menu_options)
-                
-    return beans.Composite(beans.Listing(
-         heading=title,
-         paging = False,         
-         menu_url = '/files/get_context_menu?items=%s' % menu_options,
-         autoexpand_column = "title",
-         param_name = 'uid',
-         columns=[
-            dict(
-                 renderer = 'numberer',
-            ),
-            dict(
-                 renderer = 'checkbox',
-            ),            
-            dict(
-                 width="100",
-                 title="Plakat",
-                 id="cover",
-            ),                              
-            dict(
-                 width="500",
-                 title="Tytuł",
-                 id="title",
-                 sortable = "true",
-            ),
-            dict(
-                 width="100",
-                 title="Oceny",
-                 id="ratings",
-                 sortable = "true",
-            ),                  
-            dict(
-                 width="60",
-                 title="Data dodania",
-                 id="date_added",
-                 sortable = "true",
-            ),
-#            dict(
-#                 width="50",
-#                 title="Napisy",
-#                 id="subtitles",
-#                 sortable = "false",
-#            ),
-        ],
-        data=data,
+    #            dict(
+    #                 width="100",
+    #                 title="Plakat",
+    #                 id="cover",
+    #            ),                   
+    #            dict(
+    #                 width="500",
+    #                 title="Tytuł",
+    #                 id="title",
+    #                 sortable = "true",
+    #            ),
+    #            dict(
+    #                 width="100",
+    #                 title="Oceny",
+    #                 id="ratings",
+    #                 sortable = "true",
+    #            ),                  
+    #            dict(
+    #                 width="60",
+    #                 title="Data dodania",
+    #                 id="date_added",
+    #                 sortable = "true",
+    #            ),
+            ],
+            data=data,
     ))
 
 
-@files.route('/files/ready')
-@common.jsonify
-def ready():
-    """ Displays list of downloaded movies """
-    return get_movies_list(path = app.config['MOVIES_READY_DIR'],
-                           menu_options = ['refresh', 'delete', 
-                                           'separator','move_watched'])
-
-
-@files.route('/files/downloading')
-@common.jsonify
-def downloading():
-    """ Displays list of current downloading movies """
-    return get_movies_list(path = app.config['MOVIES_DOWNLOADING_DIR'],
-                           menu_options = ['refresh','separator', 'delete'])
-    
-
-@files.route('/files/founded')
-@common.jsonify
-def founded():
-    """ Displays list of founded movies by robots """
-    return get_movies_list(path = app.config['MOVIES_FOUND_DIR'],
-                           menu_options = ['refresh', 'start_downloading', 
-                                           'separator','delete',]
-                           )
-    
-    
-@files.route('/files/watched')
-@common.jsonify
-def watched():
-    """ Displays list of watched movies """
-    return get_movies_list(path = app.config['MOVIES_WATCHED_DIR'],
-                           menu_options = ['refresh', 'separator', 
-                                           'move_ready', 'delete'])    
-    
         
 @files.route('/files/fetch-torrent-file', methods=['GET', 'POST'])
 @common.jsonify
@@ -438,7 +459,7 @@ def get_context_menu():
     for name, option in deepcopy(MENU_OPTIONS):
         if name in arg_options:
             if option.get('link'):
-                option['link']['url'] = option['link']['url'] % post2get()
+                option['link']['url'] = option['link']['url'] % utils.post2get()
             menu_options.append(option)
              
     return beans.MenuItems(
@@ -481,10 +502,10 @@ def move_watched():
     return modify(action='move', path_param='MOVIES_WATCHED_DIR')
 
     
-@files.route('/files/move_ready', methods=['GET', 'POST'])
+@files.route('/files/move_completed', methods=['GET', 'POST'])
 @common.jsonify
-def move_ready():
-    return modify(action='move', path_param='MOVIES_READY_DIR')
+def move_completed():
+    return modify(action='move', path_param='MOVIES_COMPLETED_DIR')
 
 
 @files.route('/files/delete', methods=['GET', 'POST'])
