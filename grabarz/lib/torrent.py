@@ -50,12 +50,12 @@ def decode(text):
         raise SyntaxError("syntax error")
     return data
 
-def get_torrent_filenames(src):
+def get_torrent_data(src):
     """ Extracts movie filenames from torrent link """
 
     data = urllib.urlopen(src).read()
-    torrent = decode(data)
-    movie_files = ["/".join(file["path"]) for file in torrent["info"]["files"] 
-                   if file['length'] > 300*MB]        
-        
-    return movie_files
+    return decode(data)
+#    movie_files = ["/".join(file["path"]) for file in torrent["info"]["files"] 
+#                   if file['length'] > 300*MB]        
+#        
+#    return movie_files

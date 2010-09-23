@@ -8,18 +8,29 @@ from flask import make_response, session
 from grabarz import models, db, app
 from grabarz.lib import beans
 
-def reload_slots(slotnames, method = 'session'):
-    """ Reload given slot in next request """    
+def push_bean(bean, method = 'session',*args, **kw):                
+    if method == 'session':
+        session['callback_updates'].append(bean)
+    else:
+        models.CallbackUpdate(bean, *args, **kw).commit()
+        
+        
+def reload_slot(slotnames, method = 'session'):
+    """ Reload given slot in next request """        
+    
     if not isinstance(slotnames, (tuple, list)):
         slotnames = [slotnames]
                 
     bean = beans.Reload(
         slot = slotnames
     )
-    if method == 'session':
-        session['callback_updates'].append(bean)
-    else:
-        models.CallbackUpdate(bean).push()
+    return push_bean(bean, method = method)
+
+def reload_listing(sid, method = 'session'):        
+    bean = beans.ReloadListing(
+        listing = sid,
+    )    
+    return push_bean(bean, method = method)      
         
 def jsonify(func, *args, **kwargs):
     """ Transform dict into json and returns it as response """    
@@ -72,13 +83,9 @@ class HydraLog(object):
             slotname = self.slot,
             action = 'close'
         )
-        models.CallbackUpdate(bean, delay = timedelta(seconds = 5)).commit()
+        common.push_bean(bean, method = 'sql', delay=timedelta(seconds = 5))
         
     def emit(self, message):
         self.message +=  '<br/>' + message      
-        app.logger.debug(message)        
-                                
-        models.CallbackUpdate(self.get_window()).commit()
-        
-
-
+        app.logger.debug(message.replace('&nbsp',' ').replace('<BR/>', '\n'))
+        common.push_bean(self.get_window(), method = 'sql')

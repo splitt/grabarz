@@ -1,21 +1,18 @@
 ## -*- coding: utf-8 -*-
 from __future__ import with_statement
 
-import re
-import os
-import shutil
-from os.path import join, split
-import ConfigParser
-from copy import deepcopy
+import time, re, os, shutil, ConfigParser
 from datetime import date
+from copy import deepcopy
+from os.path import join, split
 
 import mechanize
 from imdb import IMDb
 from flask import Module, request
 from pyquery import PyQuery as pq
 
-from grabarz import app, models, common
-from grabarz.lib import torrent, beans, utils
+from grabarz import app, common
+from grabarz.lib import beans, utils, torrent
 
 imdb = IMDb()
 files = Module(__name__)
@@ -87,88 +84,87 @@ MENU_OPTIONS_MAP = dict(
 
     
 MOVIE_DATA = dict(
-        imdb_rating = '',
-        imdb_data = '',
-        title = '',
-        runtime = '',
-        year = '',
-        date_added = '',
-        filmweb_rating = '',
-        filmweb_opinions = '',
-        filmweb_url = '',
-        polish_title = '',
-    )
+    imdb_rating = '',
+    imdb_data = '',
+    title = '',
+    runtime = '',
+    year = '',
+    date_added = '',
+    filmweb_rating = '',
+    filmweb_opinions = '',
+    filmweb_url = '',
+    polish_title = '',
+)
 
 
-@files.route('/files/feed_movie')
+def title_year_from_filename(filename):
+    """ Parse title and production year from given filename"""
+    year_re = '(1|2)[0-9]{3}$'
+    
+    title = filename.replace('.', ' ')
+    title = re.sub('(1080|720).*$', '', title).strip()
+    title = re.sub('\(|\)|\[|\]', '', title).strip()
+    
+    year =  re.search(year_re, title) 
+    if year:
+        year = year.group()   
+    title = re.sub(year_re, '', title).strip().capitalize()
+        
+    return title, year
+    
+    
+def get_cover_from_google(title):
+    """ Search in google docs cover """
+                
+
+@files.route('/files/feed-movie-process')
 @common.jsonify
 def feed_movie():
     """Creates folder with movie data."""
-                
-    path = request.args.get('path')
-    file = request.args.get('file')
-    
-    #: if file passed than adding now torrent, otherwise only refreshing
-    title = file or path.split('/')[-1]
-    
-    hydra_log = common.HydraLog('feeding_log|'+title, 
-                                "Pobieranie definicji filmu '%s'" % title)
-    
-    hydra_log.emit(u'Rozpoczynam procesowanie filmu "%s" ' % title)        
-    data = dict(MOVIE_DATA)  
-            
-    #: Parsing movie filename for proper title
-    if file:
-        year_re = '(1|2)[0-9]{3}$'
-        title = title.replace('.', ' ')
-        title = re.sub('(1080|720).*$', '', title).strip()
-        title = re.sub('\(|\)|\[|\]', '', title).strip()        
-        title = re.sub(year_re, '', title).strip().capitalize()
-        hydra_log.emit(u'Sparsowano tytuł filmu: "%s"' % title)
-        movie_year = re.search(year_re, title)
+    import pdb;pdb.set_trace()
+    hlog = common.HydraLog(slot = `time.time()`, heading = "Analiza '%s'")
+    data = dict(MOVIE_DATA)
+
+    #: adding new torrent
+    if request.form.get('torrent_url'):
+        torrent_data = torrent.get_torrent_data(request.form['torrent_url'])
+        path = join(app.config['RTORRENT_DOWNLOADING_DIR'], 
+                    torrent_data['info']['name']) 
+        filename = sorted(torrent_data['info']['files'], 
+                          key = lambda x: x['length'])[-1]['path'][-1]                                    
+        title, year = title_year_from_filename(filename)        
         
-        if movie_year:
-            movie_year = movie_year[0]
-            hydra_log.emit(u'Wyciągnięto rok produkcji z nazwt filmu: %s' 
-                           % movie_year)
-        
-    else: #refreshing
-        config = ConfigParser.RawConfigParser()        
-        config.read(join(path, 'grabarz.ini'))
-        ini_data = dict(config.items('data'))
-        movie_year = ini_data.get('year')
-        title = ini_data.get('title')        
-        
-                
-    config = ConfigParser.RawConfigParser()
+        hlog.emit(u'Sparsowano tytuł filmu: "%s" na podstawie pliki' % title)        
+        if year:
+            hlog.emit(u'Wyciągnięto rok produkcji filmu:%s ' % year)      
     
-                            
+    #: refreshing dat - getting info from ini_file    
+    else:
+        path = request.args['path']
+        title = path.split('/')[-1]
+        cfg = ConfigParser.RawConfigParser()        
+        cfg.read(join(path, 'grabarz.ini'))
+        ini_data = dict(cfg.items('data'))
+        year = ini_data.get('year')
+        title = ini_data.get('title')            
+        hlog.emit(u'Rozpoczynam odświeżanie "%s" ' % title)
+                                        
     #: Searching in IMDB database    
-    hydra_log.emit(u'Szukam definicji w bazie IMDB')    
+    hlog.emit(u'Szukam filmu w bazie IMDB...')    
     try:
         movie = imdb.search_movie(title)[0]
     except IndexError:
-        app.logger.debug(u'Nie rozpoznano filmu "%s" w bazie IMDB' % title)
-        return    
-        
+        hlog.emit(u'[ERROR] Nie rozpoznano filmu w bazie IMDB')
+        return 'ERROR'        
     imdb_id = movie.getID()
     imdb_data = imdb.get_movie(imdb_id)
     title = data['title'] = imdb_data['title']
-    hydra_log.emit(u'Znaleziono film "%s" w bazie IMDB' % title)
-        
-    #: Make contener directory for files
-    full_work_dir = join(app.config['MOVIES_DOWNLOADING_DIR'], title)
+    if not all(imdb_data['rating'], imdb_data['year'],imdb_data['runtime']):
+        hlog.emit(u'[ERROR] Nie można znaleść poprawnego filmu w bazie IMDB')
+        return 'ERROR'        
+    hlog.emit(u'Znaleziono film w bazie IMDB')
     
-    try:    
-        os.makedirs(full_work_dir)
-    except OSError:
-        pass #: Path propably exists 
-    
-    #: Creating a ghost file
-#    file = open(join(full_work_dir, name+'_downloading'), 'w')
-#    file.close()    
-        
-
+    #: feeding from IMDB    
     data['imdb_rating'] = imdb_data.get('rating')
     data['runtime'] =  ' '.join(imdb_data.get('runtime')[:1])
     data['year'] =  imdb_data.get('year')
@@ -176,11 +172,11 @@ def feed_movie():
     data['date_added'] = '-'.join(str(date.today()).split('-')[::-1])
                 
     #: Saving cover url
-    if imdb_data.get('cover url'):    
-        utils.download(imdb_data['cover url'], join(full_work_dir, 'cover.jpg'))
+    cover_url = imdb_data.get('cover url') or get_cover_from_google(title)  
+    utils.download(cover_url, join(path, 'cover.jpg'))        
                      
     #: Searching in Filmweb site
-    hydra_log.emit(u'Szukam definicji w bazie Filmweb')
+    hlog.emit(u'Szukam definicji w bazie Filmweb')
     br = mechanize.Browser()
     resp = br.open('http://www.filmweb.pl/search?q=%s' % title.replace(' ','+'))
     
@@ -198,7 +194,7 @@ def feed_movie():
         resp = None        
     
     if resp:
-        hydra_log.emit(u'Znaleziono film "%s" w bazie Filmweb' % title)
+        hlog.emit(u'Znaleziono film "%s" w bazie Filmweb' % title)
         d = pq(resp.read())
         data['filmweb_rating'] = d('.rating .average').text().replace(',', '.')
         data['description'] = d('.filmDescrBg').text()
@@ -209,30 +205,43 @@ def feed_movie():
     else:
         app.logger.warning(u'Nie znaleziono filmu "%s" w bazie Filmweb' % title)    
         
-    data['__space__'] = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
-    hydra_log.emit(u"""=================================<br/>
-                        Podstawowe informację o filmie:<br/> 
-                        %(__space__)srating IMDB: %(imdb_rating)s<br/>
-                        %(__space__)sFilmweb: %(filmweb_rating)s<br/>
-                        %(__space__)sPolski tytuł: "%(polish_title)s"<br/>
-                        %(__space__)srok produkcji: %(year)s<br/>                       
-                    """% data) 
+    data['__space__'] = "&nbsp;" * 8
+    hlog.emit(u"""
+        =================================<br/>
+        Podstawowe informację o filmie:<br/> 
+        %(__space__)srating IMDB: %(imdb_rating)s<br/>
+        %(__space__)sFilmweb: %(filmweb_rating)s<br/>
+        %(__space__)sPolski tytuł: "%(polish_title)s"<br/>
+        %(__space__)srok produkcji: %(year)s<br/>                       
+    """% data) 
             
-    #: Dumps data to ini file    
+    if request.form.get('torrent_url'):
+        #:-- new torrent succesfully recognizes ad film or tvshow --
+        
+        #: saving torrent file    
+        utils.download(request.form.get('torrent_url'), 
+                       app.config['RTORRENT_WATCH_DIR'])
+        
+        #: making link to movies directory
+        os.symlink(path, join(app.config['MOVIES_DOWNLOADING_DIR']))     
+        hlog.close()
+    else:
+        common.reload_slot('@center', method = 'sql')
+        
+    #: Dumps data to ini file
+    config = ConfigParser.RawConfigParser()    
     config.add_section('data')
     for k, v in data.items():
         val = unicode(v).encode('utf-8')
         config.set('data', k, val)
-        
-    with open(join(full_work_dir, 'grabarz.ini'), 'wb') as configfile:
+                
+    with open(join(path, 'grabarz.ini'), 'wb') as configfile:
         config.write(configfile)
         
-    hydra_log.emit(u'Utworzono plik ini<br/><br/>KONIEC')
+    hlog.emit(u'Uaktualniono plik ini<br/><br/>KONIEC')            
+    hlog.close()
+    return 'OK'        
     
-    models.CallbackUpdate(beans.Reload(slot = "CONTENT")).commit()
-    hydra_log.close()
-    
-    return 'done'
 
 def get_torrent_info(init_data, path):
     return dict(
@@ -344,7 +353,8 @@ def files_listing():
 #        ),
         beans.Listing(
              heading = title,
-             paging = False,         
+#             paging = True,
+#             paging_url = '/aaaaaaaaa',         
              menu_url = '/files/get_context_menu?items=%s' % ','.join(menu_options),
              autoexpand_column = "title",
              param_name = 'uid',
@@ -433,18 +443,7 @@ def files_listing():
     ))
 
 
-        
-@files.route('/files/fetch-torrent-file', methods=['GET', 'POST'])
-@common.jsonify
-def fetch_torrent_file():
-    """ Reads information from torrent file and creates grabarz.ini 
-    file for given movie."""
-    
-    file = torrent.get_torrent_filenames(request.form['torrent_src'])[0]        
-    path = join(app.config['MOVIES_DOWNLOADING_DIR'], 'movies')
-    models.Task('/files/feed_movie?file=%s&path=%s' % (file, path)).commit()
-    return beans.Null()
-    
+            
 
 @files.route('/files/get_context_menu', methods=['GET', 'POST'])
 @common.jsonify
@@ -485,7 +484,7 @@ def modify(action, path_param=None):
         elif action == 'refresh':
             
             reload = False
-            task_url = '/files/feed_movie?path=%s&action=refresh' % item
+            task_url = '/files/feed-movie-process?path=%s&action=refresh' % item
             Task(task_url).commit()                       
         
     if reload:

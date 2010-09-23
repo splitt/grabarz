@@ -141,7 +141,7 @@ def calendar_menu():
 def calendar_refresh():
     """ Used to reload both the calendar content and slots at the same time."""
     save_year_month_day()
-    common.reload_slots(['calendar-content', 'calendar-notes'])
+    common.reload_slot(['calendar-content', 'calendar-notes'])
     return beans.Null()
 
 @event_calendar.route('/calendar/calendar-notes')

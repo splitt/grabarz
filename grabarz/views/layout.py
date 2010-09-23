@@ -26,6 +26,7 @@ def get_folder_count(path):
 @common.jsonify
 def config():
     session['callback_updates'] = []
+    session['filters'] = ['movies', 'tvshows']
     
     return beans.Config(
         title="grabarz",
@@ -52,7 +53,7 @@ def slots():
         
         beans.Slot(
             id='left',
-            heading = "Filter",
+            heading = "Files",
             collapsible = True,
             data=['WEST', 140],
             margins=[5, 0, 0, 5],
@@ -105,6 +106,7 @@ def top():
                 title = 'Process',
                 link = beans.Link(),
             ),
+            
             beans.MenuSeparator(),
                             
             beans.MenuButton(
@@ -118,68 +120,138 @@ def top():
                 link = beans.Link(
                     url = '/calendar/calendar_window'
                 ),
-            ),                                                
+            ),
+            
+            beans.MenuSeparator(),
+            
+            beans.MenuButton(
+                icon = 'icon-film_link',
+                title = 'TvShows scheduler',
+                link = beans.Link(),
+            ),                                                            
         ]                      
     )
-        
+
 
 @layout.route('/layout/left')
 @common.jsonify
 def left():
-    return beans.Composite(        
-        beans.Form(
-            formdefs = [
-                beans.CheckBoxField(
-                    name='movies',
-                    label='Movies',
-                 ),
-                beans.CheckBoxField(
-                    name='shovs',
-                    label='Tv shows',
-                 ),             
-            ],     
-            buttons = [
-                beans.Button(
-                    label = 'apply',
-                    link = beans.Link()                                    
-                )                       
-            ]           
+    return beans.Slots(
+        beans.Slot(
+            id = 'left-menu',
+            data = ['NORTH', 136],
+            link = beans.Link(
+                url = '/layout/left-menu',
+            )       
         ),
-        
-        beans.HTML(
-            content = """
-            <div class="x-small-editor x-panel-header x-component">
-                <span  class="x-panel-header-text">Menu </span>
-            </div>""",                   
-        ),
-                                   
-        beans.Tree(
-            heading = None,
-            sid = "menu",
-            url = "/layout/left-data",        
-            autoexpand_column =  "id",
-            expand = False,
-            columns = [
-                beans.Column(
-                    renderer = 'treegridcell',
-                    title = "Pliki",
-                    id = "id",
-                    width = '100',                    
-                ),   
-                                   
-                beans.Column(
-                    renderer = 'icon',
-                    title = "",
-                    id = "ico",
-                    width = '40',
-                ),
-                                   
-            ],                    
-        ),
-        
-    
+        beans.Slot(
+            heading = 'Filter',
+            id = 'left-filter',
+            data = ['CENTER'],
+            link = beans.Link(
+                url = '/layout/left-filter',
+            )                          
+        ),                           
     )
     
+
+@layout.route('/layout/left-menu')
+@common.jsonify    
+def left_menu():
+    return beans.Tree(
+        heading = None,
+        sid = "menu",
+        url = "/layout/left-data",        
+        autoexpand_column =  "id",
+        expand = False,
+        columns = [
+            beans.Column(
+                renderer = 'treegridcell',
+                title = "Pliki",
+                id = "id",
+                width = '100',                    
+            ),   
+                               
+            beans.Column(
+                renderer = 'icon',
+                title = "",
+                id = "ico",
+                width = '40',
+            ),
+        ],                        
+    )
+
+
+@layout.route('/layout/left-filter')
+@common.jsonify    
+def left_filter():
+    def get_icon(key):
+        return 'accept' if key in session['filters'] else 'delete'
+    
+    url = '/layout/switch-filter?type=%s&current=%s'
+            
+    return beans.Listing(
+        autoexpand_column = 'ico',
+        sid = 'filters',
+        paging = False,
+        size = -1,
+        
+        columns = [
+            beans.Column(
+                id = 'name',
+                title = '',
+                width = '100',
+            ),
+            beans.Column(
+                id = 'ico',
+                title = '',
+                width = '31',
+                renderer = 'icon',
+            ),                
+        ],
+        
+        data = [
+            beans.Row(
+                name = 'movies',
+                ico = dict(
+                    icon = 'icon-%s' % get_icon('movies'),
+                    url = url % ( 'movies', get_icon('movies')),
+                ),                    
+                __params__ =  dict(
+                    uid = 'movies_filter',
+                    url = url % ( 'movies', get_icon('movies')),                                                               
+                ),                                
+            ),
+            beans.Row(
+                name = 'tvshows',
+                ico = dict(
+                    icon = 'icon-%s' % get_icon('tvshows'),
+                    url = url % ( 'tvshows', get_icon('tvshows')),
+                ),                 
+                __params__ =  dict(
+                    uid = 'tvshows_filter',
+                    url = url % ( 'tvshows', get_icon('tvshows')),                                    
+                ),                                  
+            ),                    
+        ]             
+    )
+    
+
+    
+@layout.route('/layout/switch-filter', methods=['GET', 'POST'])
+@common.jsonify
+def switch_filter():
+    type = request.args['type']
+    current = request.args['current']
+    
+    if current == 'accept':
+        session['filters'].remove(type)
+    else:
+        session['filters'].append(type)
+        
+    common.reload_slot(['left-filter', '@center'])
+    
+    return beans.Null()
     
 @layout.route('/layout/left-data', methods=['GET', 'POST'])
 @common.jsonify
@@ -304,7 +376,7 @@ def left_data():
             ico = dict(
                 url = "/system/listing",
                 slot = 'internal', 
-                icon = 'icon-zoom',
+                icon = 'icon-find',
                        
             )                                            
         ),                          

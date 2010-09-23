@@ -75,8 +75,8 @@ class Bean(dict):
 class Listing(Bean):
     __type__ = 'listing'
     heading = None
-    data = []
     columns = []
+    data = []
     
     
 def HackScriptButton(label='ok', script = "alert('ok')"):
@@ -133,6 +133,13 @@ class Reload(Bean):
     __type__ = 'reload'
     slot = 'internal'
     silent = False
+    
+    
+class ReloadListing(Bean):
+    __type__ = 'reload_listing'
+    listing = 'sid'
+
+    
     
 class Slot(Bean):
     id = 'slot-id'
@@ -282,7 +289,12 @@ class Dialog(Bean):
     __type__ = 'dialog'
     title = 'Potwierdzenie'
     text = 'na pewno?'
-    buttons = []
+    buttons = [Button(
+        label = 'OK',
+        link = Link(
+            url = '/layout/null',
+        )
+    )]
 
 
 class Field(Bean):
