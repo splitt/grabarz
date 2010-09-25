@@ -301,6 +301,7 @@ class Field(Bean):
     """
     Zwraca słownik definiujący pole
     """
+    __AUTOFEED__ = True
     def __init__(self, *args, **kwargs):
         super(Field, self).__init__(*args, **kwargs)
 
@@ -319,7 +320,7 @@ class Field(Bean):
         post_val = request.form.to_dict().get(name)
         old_value = self.get('value')
 
-        if post_val:
+        if post_val and not getattr(self, '__AUTOFEED__', None):
             if isinstance(old_value, (str, unicode)):
                 self.update(dict(
                     value=post_val,

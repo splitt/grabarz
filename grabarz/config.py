@@ -3,7 +3,7 @@ from os.path import join
 
 class Config(object):
     SECRET_KEY = '^&@&*$@#BRKFJ*(@#RUY(*#FH#YUBG#*F@&R*G#GF@&*#FG'
-    UPDATE_INTERVAL = 100000
+    UPDATE_INTERVAL = 1000
     
 class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'sqlite:////home/mzajonz/workspace/grabarz/db/devel.db'
@@ -12,10 +12,10 @@ class DevelopmentConfig(Config):
     FAKE_TORRENT = True    
     DUMP_DIR = '/home/mzajonz/workspace/grabarz/shares'    
     MOVIES_DIR = join(DUMP_DIR, 'movies')
-    MOVIES_FOUND_DIR = join(MOVIES_DIR, 'found')
+    MOVIES_FOUNDED_DIR = join(MOVIES_DIR, 'founded')
     MOVIES_QUEUED_DIR = join(MOVIES_DIR, 'queued')
-    MOVIES_DOWNLOADING_DIR = join(MOVIES_DIR, 'downloading')
-    MOVIES_UPLOADING_DIR = join(MOVIES_DIR, 'uploading')
+    MOVIES_DL_DIR = join(MOVIES_DIR, 'downloading')
+    MOVIES_UP_DIR = join(MOVIES_DIR, 'uploading')
     MOVIES_COMPLETED_DIR = join(MOVIES_DIR, 'completed')
     MOVIES_WATCHED_DIR = join(MOVIES_DIR, 'watched')        
 
@@ -38,6 +38,6 @@ class ProductionConfig(Config):
     MOVIES_DIR = '/shares/rtorrent/movies'
     MOVIES_COMPLETED_DIR = '/shares/rtorrent/movies/completed'
     MOVIES_WACTHED_DIR = '/shares/rtorrent/movies/watched'
-    MOVIES_DOWNLOADING_DIR = '/shares/rtorrent/movies/downloading'
-    MOVIES_FOUND_DIR = '/shares/rtorrent/movies/found'
+    MOVIES_DL_DIR = '/shares/rtorrent/movies/downloading'
+    MOVIES_FOUNDED_DIR = '/shares/rtorrent/movies/founded'
     URL_ROOT = 'http://grabarz.zajonz.pl'

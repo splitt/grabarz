@@ -34,7 +34,10 @@ def reload_listing(sid, method = 'session'):
         
 def jsonify(func, *args, **kwargs):
     """ Transform dict into json and returns it as response """    
-    adict = func(*args, **kwargs)    
+    adict = func(*args, **kwargs)
+    if not isinstance(adict, dict):
+        return adict
+    
             
     #: getting updates from session and database
     
@@ -83,9 +86,9 @@ class HydraLog(object):
             slotname = self.slot,
             action = 'close'
         )
-        common.push_bean(bean, method = 'sql', delay=timedelta(seconds = 5))
+        push_bean(bean, method = 'sql', delay=timedelta(seconds = 5))
         
     def emit(self, message):
         self.message +=  '<br/>' + message      
-        app.logger.debug(message.replace('&nbsp',' ').replace('<BR/>', '\n'))
-        common.push_bean(self.get_window(), method = 'sql')
+        app.logger.debug(message.replace('&nbsp;',' ').replace('<BR/>', '\n'))
+        push_bean(self.get_window(), method = 'sql')

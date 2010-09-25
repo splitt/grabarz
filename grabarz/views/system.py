@@ -1,5 +1,5 @@
 ## -*- coding: utf-8 -*-
-import time
+import time, signal
 import os
 from os.path import join
 import urllib
@@ -12,27 +12,22 @@ from grabarz import app, db, common, models, views
 from grabarz.lib import beans, torrent, utils
 
 system = Module(__name__)
-cron_db = _create_scoped_session(db)
+cron_db_session = _create_scoped_session(db)
+cron_db_session = db.session
 
 PROTECTING_TIME = timedelta(seconds = 30)
  
                                                                      
 def start_cron():    
-    p = Process(target = lambda: urllib.urlopen(app.config['URL_ROOT'] + 
-                                                '/system/cron-process'))
+    p = Process(target = cron)
     p.start()
 
         
-@system.route('/system/cron-process')
+#@system.route('/system/cron-process')
 def cron():
-    models.Task.delete()
-    
-    if app.config['FAKE_TORRENT']:
-        models.Task(url = '/system/fake-torrent-process') 
-    db.session.commit()
-            
-    app.logger.debug('cron started')
-    
+    cron_db_session.query(models.Task).delete()
+    cron_db_session.commit()            
+    app.logger.debug('cron started')    
     protected = dict()    
     
     def is_procected(url):
@@ -45,7 +40,9 @@ def cron():
         return False  
                 
     while True:             
-        for task in cron_db.query(models.Task).all():                   
+        for task in cron_db_session.query(models.Task).all():
+            cron_db_session.expire_all()
+                           
             now = datetime.now()
             if task.execute_time < now and not is_procected(task.url):
                 protected[task.url] = now + PROTECTING_TIME              
@@ -63,7 +60,7 @@ def cron():
 #    system"""
 #    
 ##    #: Make contener directory for files
-##    full_work_dir = join(app.config['MOVIES_DOWNLOADING_DIR'], title)
+##    full_work_dir = join(app.config['MOVIES_DL_DIR'], title)
 ##    
 ##    try:    
 ##        os.makedirs(full_work_dir)
@@ -74,11 +71,12 @@ def cron():
 
 @system.route('/system/window-torrent-add')
 @common.jsonify
-def window_torrent_add():    
+def window_torrent_add():
     return beans.Window(                
         slotname = 'window-torrent-add',
         heading = 'Dodaj plik torrent',
-        height = 130,             
+        height = 130,      
+        replace = True,       
         object= beans.Form(
             slotname = '/movies/add',            
             buttons = [
@@ -86,7 +84,6 @@ def window_torrent_add():
                      slot = "content",
                      link = beans.Link(
                         url = "/system/fetch-torrent-file",
-                        slot = "window_add_entry",
                      ),
                      label = "Dodaj"
                 ),
@@ -96,6 +93,7 @@ def window_torrent_add():
                     name='torrent_url',
                     label='Podaj adres pliku torrent',
                     width=350,
+                    __AUTOFEED__ = False,
                  ),                      
             ],
         ),
@@ -107,6 +105,13 @@ def window_torrent_add():
 def fetch_torrent_file():
     """ Reads information from torrent file and creates grabarz.ini 
     file for given movie."""
+    
+    models.Task(
+        url = '/files/feed-movie-process', 
+        params = dict(torrent_url = request.form['torrent_url']),        
+    ).commit()
+    
+    return window_torrent_add()
                           
     if views.files.feed_movie() == 'ERROR':
         return beans.Dialog(

@@ -1,4 +1,5 @@
 ## -*- coding: utf-8 -*-
+import os
 import time
 import simplejson
 from datetime import datetime, timedelta
@@ -13,7 +14,11 @@ from grabarz.lib import beans
 def download(url, local_name):
     """Copy the contents of a file from a given URL
     to a local file.
-    """
+    """    
+    try:
+        os.makedirs(os.path.split(local_name)[0])
+    except OSError:
+        pass #path exists
     web_file = urllib2.urlopen(url)
     local_file = open(local_name, 'w')
     local_file.write(web_file.read())

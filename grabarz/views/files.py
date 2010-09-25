@@ -1,7 +1,7 @@
 ## -*- coding: utf-8 -*-
 from __future__ import with_statement
 
-import time, re, os, shutil, ConfigParser
+import time, re, os, shutil, ConfigParser, difflib
 from datetime import date
 from copy import deepcopy
 from os.path import join, split
@@ -75,9 +75,9 @@ MENU_OPTIONS = [
 
 MENU_OPTIONS_MAP = dict(
     completed = ['refresh', 'delete', 'separator','move_watched'],
-    downloading = ['refresh','separator', 'delete'],
-    uploading = ['refresh','separator', 'delete'],
-    found = ['refresh', 'start_downloading', 'separator','delete'],
+    dl = ['refresh','separator', 'delete'],
+    up = ['refresh','separator', 'delete'],
+    founded = ['refresh', 'start_downloading', 'separator','delete'],
     queued = ['refresh', 'start_downloading', 'separator','delete'],
     watched = ['refresh', 'separator', 'move_completed', 'delete'],           
 )
@@ -115,24 +115,22 @@ def title_year_from_filename(filename):
     
 def get_cover_from_google(title):
     """ Search in google docs cover """
+    return ""
                 
 
 @files.route('/files/feed-movie-process')
 @common.jsonify
 def feed_movie():
-    """Creates folder with movie data."""
-    import pdb;pdb.set_trace()
-    hlog = common.HydraLog(slot = `time.time()`, heading = "Analiza '%s'")
+    """Creates folder with movie data."""    
+    hlog = common.HydraLog(slot = `time.time()`, heading = "Analiza pliku")
     data = dict(MOVIE_DATA)
 
     #: adding new torrent
-    if request.form.get('torrent_url'):
-        torrent_data = torrent.get_torrent_data(request.form['torrent_url'])
+    if request.args.get('torrent_url'):
+        torrent_data = torrent.get_torrent_data(request.args['torrent_url'])
         path = join(app.config['RTORRENT_DOWNLOADING_DIR'], 
-                    torrent_data['info']['name']) 
-        filename = sorted(torrent_data['info']['files'], 
-                          key = lambda x: x['length'])[-1]['path'][-1]                                    
-        title, year = title_year_from_filename(filename)        
+                    torrent_data['info']['name'])                                      
+        title, year = title_year_from_filename(torrent_data['info']['name'])        
         
         hlog.emit(u'Sparsowano tytuł filmu: "%s" na podstawie pliki' % title)        
         if year:
@@ -152,18 +150,31 @@ def feed_movie():
     #: Searching in IMDB database    
     hlog.emit(u'Szukam filmu w bazie IMDB...')    
     try:
-        movie = imdb.search_movie(title)[0]
+        movies = imdb.search_movie(title)        
     except IndexError:
         hlog.emit(u'[ERROR] Nie rozpoznano filmu w bazie IMDB')
+        return 'ERROR'            
+    
+    #: selecting best match
+    if year:
+        movies = [m for m in movies if `m.get('year')` == year]        
+    matches = difflib.get_close_matches(title, [m.get('title') for m in movies])
+    try:        
+        movie = [m for m in movies if m.get('title') == matches[0]][0]
+    except(KeyError):
+        hlog.emit(u'[ERROR] Nie rozpoznano filmu w bazie IMDB')
         return 'ERROR'        
+    
+    #: getting full movie data from imdb
     imdb_id = movie.getID()
     imdb_data = imdb.get_movie(imdb_id)
     title = data['title'] = imdb_data['title']
-    if not all(imdb_data['rating'], imdb_data['year'],imdb_data['runtime']):
+    if not all([imdb_data.get('rating'), imdb_data.get('year'),
+                imdb_data.get('runtime')]):
         hlog.emit(u'[ERROR] Nie można znaleść poprawnego filmu w bazie IMDB')
         return 'ERROR'        
     hlog.emit(u'Znaleziono film w bazie IMDB')
-    
+        
     #: feeding from IMDB    
     data['imdb_rating'] = imdb_data.get('rating')
     data['runtime'] =  ' '.join(imdb_data.get('runtime')[:1])
@@ -171,10 +182,10 @@ def feed_movie():
     data['genres'] = ' '.join(imdb_data.get('genres'))
     data['date_added'] = '-'.join(str(date.today()).split('-')[::-1])
                 
-    #: Saving cover url
-    cover_url = imdb_data.get('cover url') or get_cover_from_google(title)  
-    utils.download(cover_url, join(path, 'cover.jpg'))        
-                     
+    #: Saving cover url    
+    cover_url = imdb_data.get('cover url') or get_cover_from_google(title)      
+    utils.download(cover_url, join(path, 'cover.jpg'))
+                             
     #: Searching in Filmweb site
     hlog.emit(u'Szukam definicji w bazie Filmweb')
     br = mechanize.Browser()
@@ -215,15 +226,19 @@ def feed_movie():
         %(__space__)srok produkcji: %(year)s<br/>                       
     """% data) 
             
-    if request.form.get('torrent_url'):
+    if request.args.get('torrent_url'):
         #:-- new torrent succesfully recognizes ad film or tvshow --
         
         #: saving torrent file    
-        utils.download(request.form.get('torrent_url'), 
-                       app.config['RTORRENT_WATCH_DIR'])
-        
+        utils.download(request.args.get('torrent_url'), 
+                       join(app.config['RTORRENT_WATCH_DIR'], title+'.torrent'))
+                
         #: making link to movies directory
-        os.symlink(path, join(app.config['MOVIES_DOWNLOADING_DIR']))     
+        try:
+            os.symlink(path, join(app.config['MOVIES_DL_DIR'], 
+                                  split(path)[-1]))
+        except(OSError): #file exists
+            pass     
         hlog.close()
     else:
         common.reload_slot('@center', method = 'sql')
@@ -240,6 +255,7 @@ def feed_movie():
         
     hlog.emit(u'Uaktualniono plik ini<br/><br/>KONIEC')            
     hlog.close()
+    common.reload_slot(['left-menu', '@center'], method = 'sql')
     return 'OK'        
     
 
@@ -292,7 +308,7 @@ def get_expander_info(init_data, path):
         '<b>Gatunki</b> %s' % init_data['genres'],            
         (init_data.get('description') or '')[:700],            
     ])    
-    cover = '<img src="%s"/>' % join('_MOVIES_DIR',split(path)[-1],
+    cover = '<img src="%s"/>' % join('_movies',split(path)[-1],
                                      init_data['title'],
                                      'cover.jpg')
     html = "<table class='row_expander'><tr>%s</tr></table>"
@@ -318,7 +334,7 @@ def files_listing():
             menu_options = []
             dirs.extend([
                 'MOVIES_COMPLETED_DIR', 'MOVIES_WATCHED_DIR',
-                'MOVIES_DOWNLOADING_DIR','MOVIES_FOUND_DIR',
+                'MOVIES_DL_DIR','MOVIES_FOUNDED_DIR',
             ])
         else:
             menu_options = MENU_OPTIONS_MAP[type]

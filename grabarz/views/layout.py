@@ -18,7 +18,7 @@ def icon_factory(ico = 'icon-arrow_down'):
 
 def get_folder_count(path):
     """ Returns count of movies in given path """
-    return str(len(os.listdir(path)))
+    return len(os.listdir(path))
 
 
 
@@ -161,7 +161,7 @@ def left_menu():
     return beans.Tree(
         heading = None,
         sid = "menu",
-        url = "/layout/left-data",        
+        url = "/layout/left-tree-data",        
         autoexpand_column =  "id",
         expand = False,
         columns = [
@@ -253,15 +253,26 @@ def switch_filter():
     
     return beans.Null()
     
-@layout.route('/layout/left-data', methods=['GET', 'POST'])
+@layout.route('/layout/left-tree-data', methods=['GET', 'POST'])
 @common.jsonify
 def left_data():
+    gfc = get_folder_count
+    
+    folder_count = dict(
+        downloading = gfc(app.config['MOVIES_DL_DIR']),
+        uploading = gfc(app.config['MOVIES_UP_DIR']),     
+        completed = gfc(app.config['MOVIES_COMPLETED_DIR']),
+        queued = gfc(app.config['MOVIES_QUEUED_DIR']),
+        founded = gfc(app.config['MOVIES_FOUNDED_DIR']),                        
+    )
+    folder_count['all'] = sum(folder_count.values()) 
+    
+    
     return beans.Data(
                       
         #:--- All files ---
         dict(             
-            id = '--All files--',
-            
+            id = '--All files-- [%d]' % folder_count['all'],            
             ico = dict(
                 url = "/system/listing",
                 slot = 'internal', 
@@ -281,13 +292,13 @@ def left_data():
         ),
        #:--- Downloading ---
         dict(             
-            id = 'Downloading',                                                    
+            id = 'Downloading [%d] ' % folder_count['downloading'],                                                    
             __params__ = dict(
                 has_children = False,
                 uid = 'downloading',
                 slot = 'internal',
                 link = beans.Link(
-                    url = '/files/files_listing?filter=all&type=downloading',
+                    url = '/files/files_listing?filter=all&type=dl',
                     slot = 'files-list',                   
                 ),
             ),
@@ -301,13 +312,13 @@ def left_data():
         
         #:--- Uploading ---
         dict(             
-            id = 'Uploading',                                                    
+            id = 'Uploading [%d] ' % folder_count['uploading'],                                                    
             __params__ = dict(
                 has_children = False,
-                uid = 'downloading',
+                uid = 'uploading',
                 slot = 'internal',
                 link = beans.Link(
-                    url = '/files/files_listing?filter=all&type=uploading',
+                    url = '/files/files_listing?filter=all&type=up',
                     slot = 'files-list',                   
                 ),
             ),
@@ -322,7 +333,7 @@ def left_data():
                             
         #:--- Queued ---
         dict(             
-            id = 'Queued',                                                    
+            id = 'Queued [%d] ' % folder_count['queued'],                                                
             __params__ = dict(
                 has_children = False,
                 uid = 'queued',
@@ -342,7 +353,7 @@ def left_data():
                       
         #:--- Completed ---
         dict(             
-            id = 'Completed',                                                    
+            id = 'Completed [%d]' % folder_count['completed'],                                                    
             __params__ = dict(
                 has_children = False,
                 uid = 'completed',
@@ -359,17 +370,16 @@ def left_data():
                        
             )                        
         ),
-                        
         
         #:--- Founded ---
         dict(             
-            id = 'Found',                                                    
+            id = 'Founded [%d]' % folder_count['founded'],                                                 
             __params__ = dict(
                 has_children = False,
-                uid = 'queued',
+                uid = 'founded',
                 slot = 'internal',
                 link = beans.Link(
-                    url = '/files/files_listing?filter=all&type=found',
+                    url = '/files/files_listing?filter=all&type=founded',
                     slot = 'files-list',                   
                 ),
             ),
@@ -377,7 +387,6 @@ def left_data():
                 url = "/system/listing",
                 slot = 'internal', 
                 icon = 'icon-find',
-                       
             )                                            
         ),                          
     )

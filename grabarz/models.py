@@ -26,11 +26,15 @@ class Task(db.Model, ExtraModelFeatures):
     timedelta = db.Column(db.Interval)    
     run_periodic = db.Column(db.Boolean)    
             
-    def __init__(self, url, delay = None, run_periodic = False):
+    def __init__(self, url, params = {}, delay = None, run_periodic = False):
         if not delay:
             delay = timedelta(seconds = 0)
             
         self.url = url
+        
+        if params:
+            self.url += '?'+'&'.join(["%s=%s" % (k, v) 
+                                      for k, v in params.items()])
         self.timedelta = delay 
         self.run_periodic = run_periodic
         self.execute_time = datetime.now() + delay
