@@ -10,13 +10,13 @@ setup(
     install_requires=[
         'Flask-SQLAlchemy',
         'Flask-script',
-        'pyquery',
         'dateutils',
         'decorator',
         'simplejson',
 	    'imdbpy',
-        'mechanize',
-	'tornado',
-	'blinker',
+        'pynav',
+	    'tornado',
+	    'blinker',
+        'mechanoid',
     ]
 )

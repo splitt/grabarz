@@ -21,5 +21,7 @@
 <path>/usr/share/pyshared</path>
 <path>/usr/local/lib/python2.6/dist-packages</path>
 <path>/home/mzajonz/workspace/grabarz/env/lib/python2.6/site-packages/pyquery-0.6.1-py2.6.egg</path>
+<path>/home/mzajonz/workspace/grabarz/env/lib/python2.6/site-packages/pynav</path>
+<path>/home/mzajonz/workspace/grabarz/env/lib/python2.6/site-packages/mechanoid</path>
 </pydev_pathproperty>
 </pydev_project>
