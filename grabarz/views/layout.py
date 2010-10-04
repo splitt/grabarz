@@ -12,7 +12,7 @@ def icon_factory(ico = 'icon-arrow_down'):
     return """
         <span style="width: 16px; height: 16px; display: inline;" 
             class="%s clickable-icon ">&nbsp;&nbsp;&nbsp;&nbsp;
-        </span>
+        </span>&nbsp;&nbsp;
     """ % ico
 
 
@@ -158,28 +158,122 @@ def left():
 @layout.route('/layout/left-menu')
 @common.jsonify    
 def left_menu():
-    return beans.Tree(
+    gfc = get_folder_count
+    
+    folder_count = dict(
+        downloading = gfc(app.config['MOVIES_DL_DIR']),
+        uploading = gfc(app.config['MOVIES_UP_DIR']),     
+        completed = gfc(app.config['MOVIES_COMPLETED_DIR']),
+        queued = gfc(app.config['MOVIES_QUEUED_DIR']),
+        founded = gfc(app.config['MOVIES_FOUNDED_DIR']),                        
+    )
+    folder_count['all'] = sum(folder_count.values()) 
+        
+    return beans.Listing(
         heading = None,
         sid = "menu",
-        url = "/layout/left-tree-data",        
-        autoexpand_column =  "id",
+        autoexpand_column =  "item",
         expand = False,
         columns = [
             beans.Column(
-                renderer = 'treegridcell',
                 title = "Pliki",
-                id = "id",
-                width = '100',                    
-            ),   
-                               
-            beans.Column(
-                renderer = 'icon',
-                title = "",
-                id = "ico",
-                width = '40',
+                id = "item",
+                width = '135',                    
             ),
-        ],                        
+        ],
+        
+        data = [                 
+            #:--- All files ---
+            dict(             
+                item = '%s --All files-- [%d]' % (icon_factory('icon-world'), 
+                                                  folder_count['all']),                                              
+                __params__ = dict(
+                    uid = 'all',
+                    slot = 'internal',
+                    link = beans.Link(
+                        url = '/files/files_listing?filter=all&type=all'
+                              '&title=All files',
+                        slot = 'files-list',                   
+                    ),
+                )
+            ),
+           #:--- Downloading ---
+            dict(             
+                item = '%sDownloading [%d] ' % (icon_factory('icon-arrow_down'),
+                                                 folder_count['downloading']),                                                    
+                __params__ = dict(
+                    uid = 'downloading',
+                    slot = 'internal',
+                    link = beans.Link(
+                        url = '/files/files_listing?filter=all&type=dl'
+                              '&title=downloading',
+                        slot = 'files-list',                   
+                    ),
+                ),
+            ),      
+            
+            #:--- Uploading ---
+            dict(             
+                item = '%sUploading [%d] ' % (icon_factory('icon-arrow_up'),
+                                              folder_count['uploading']),                                                    
+                __params__ = dict(
+                    uid = 'uploading',
+                    slot = 'internal',
+                    link = beans.Link(
+                        url = '/files/files_listing?filter=all&type=up'
+                              '&title=Uploading',
+                        slot = 'files-list',                   
+                    ),
+                ),
+            ),                     
+                                
+            #:--- Queued ---
+            dict(             
+                item = '%sQueued [%d] ' % (icon_factory('icon-hourglass_go'),
+                                           folder_count['queued']),                                                
+                __params__ = dict(
+                    uid = 'queued',
+                    slot = 'internal',
+                    link = beans.Link(
+                        url = '/files/files_listing?filter=all&type=queued'
+                              '&title=Queued',
+                        slot = 'files-list',                   
+                    ),
+                ),                 
+            ),                          
+                          
+            #:--- Completed ---
+            dict(             
+                item = '%sCompleted [%d]' % (icon_factory('icon-flag_green'),
+                                             folder_count['completed']),                                                    
+                __params__ = dict(
+                    uid = 'completed',
+                    slot = 'internal',
+                    link = beans.Link(
+                        url = '/files/files_listing?filter=all&type=completed'
+                              '&title=Completed',
+                        slot = 'files-list',                   
+                    ),                
+                ),            
+            ),
+            
+            #:--- Founded ---
+            dict(             
+                item = '%sFounded [%d]' % (icon_factory('icon-find'),
+                                           folder_count['founded']),                                                 
+                __params__ = dict(
+                    uid = 'founded',
+                    slot = 'internal',
+                    link = beans.Link(
+                        url = '/files/files_listing?filter=all&type=founded'
+                               '&title=Founded',
+                        slot = 'files-list',                   
+                    ),
+                ),                                         
+            ),                          
+        ] 
     )
+
 
 
 @layout.route('/layout/left-filter')
@@ -253,145 +347,7 @@ def switch_filter():
     
     return beans.Null()
     
-@layout.route('/layout/left-tree-data', methods=['GET', 'POST'])
-@common.jsonify
-def left_data():
-    gfc = get_folder_count
     
-    folder_count = dict(
-        downloading = gfc(app.config['MOVIES_DL_DIR']),
-        uploading = gfc(app.config['MOVIES_UP_DIR']),     
-        completed = gfc(app.config['MOVIES_COMPLETED_DIR']),
-        queued = gfc(app.config['MOVIES_QUEUED_DIR']),
-        founded = gfc(app.config['MOVIES_FOUNDED_DIR']),                        
-    )
-    folder_count['all'] = sum(folder_count.values()) 
-    
-    
-    return beans.Data(
-                      
-        #:--- All files ---
-        dict(             
-            id = '--All files-- [%d]' % folder_count['all'],            
-            ico = dict(
-                url = "/system/listing",
-                slot = 'internal', 
-                icon = 'icon-world',                                   
-            ),                                  
-            __params__ = dict(
-                has_children = False,
-                uid = 'all',
-                slot = 'internal',
-                link = beans.Link(
-                    url = '/files/files_listing?filter=all&type=all',
-                    slot = 'files-list',                   
-                ),
-                
- 
-            )
-        ),
-       #:--- Downloading ---
-        dict(             
-            id = 'Downloading [%d] ' % folder_count['downloading'],                                                    
-            __params__ = dict(
-                has_children = False,
-                uid = 'downloading',
-                slot = 'internal',
-                link = beans.Link(
-                    url = '/files/files_listing?filter=all&type=dl',
-                    slot = 'files-list',                   
-                ),
-            ),
-            
-            ico = dict(
-                link = beans.Link(),
-                slot = 'internal', 
-                icon = 'icon-arrow_down',                                   
-            )
-        ),      
-        
-        #:--- Uploading ---
-        dict(             
-            id = 'Uploading [%d] ' % folder_count['uploading'],                                                    
-            __params__ = dict(
-                has_children = False,
-                uid = 'uploading',
-                slot = 'internal',
-                link = beans.Link(
-                    url = '/files/files_listing?filter=all&type=up',
-                    slot = 'files-list',                   
-                ),
-            ),
-            
-            ico = dict(
-                link = beans.Link(),
-                slot = 'internal',                             
-                icon = 'icon-arrow_up',
-                       
-            )
-        ),                     
-                            
-        #:--- Queued ---
-        dict(             
-            id = 'Queued [%d] ' % folder_count['queued'],                                                
-            __params__ = dict(
-                has_children = False,
-                uid = 'queued',
-                slot = 'internal',
-                link = beans.Link(
-                    url = '/files/files_listing?filter=all&type=queued',
-                    slot = 'files-list',                   
-                ),
-            ),
-            ico = dict(
-                url = "/system/listing",
-                slot = 'internal', 
-                icon = 'icon-hourglass_go',                       
-            )       
-                                    
-        ),                          
-                      
-        #:--- Completed ---
-        dict(             
-            id = 'Completed [%d]' % folder_count['completed'],                                                    
-            __params__ = dict(
-                has_children = False,
-                uid = 'completed',
-                slot = 'internal',
-                link = beans.Link(
-                    url = '/files/files_listing?filter=all&type=completed',
-                    slot = 'files-list',                   
-                ),                
-            ),
-            ico = dict(
-                link = beans.Link(),
-                slot = 'internal', 
-                icon = 'icon-flag_green',
-                       
-            )                        
-        ),
-        
-        #:--- Founded ---
-        dict(             
-            id = 'Founded [%d]' % folder_count['founded'],                                                 
-            __params__ = dict(
-                has_children = False,
-                uid = 'founded',
-                slot = 'internal',
-                link = beans.Link(
-                    url = '/files/files_listing?filter=all&type=founded',
-                    slot = 'files-list',                   
-                ),
-            ),
-            ico = dict(
-                url = "/system/listing",
-                slot = 'internal', 
-                icon = 'icon-find',
-            )                                            
-        ),                          
-    )
-
-
 @layout.route('/layout/@center')
 @common.jsonify
 def center():

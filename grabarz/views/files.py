@@ -74,6 +74,7 @@ MENU_OPTIONS = [
 ]
 
 MENU_OPTIONS_MAP = dict(
+    all = ['refresh','separator', 'delete'],
     completed = ['refresh', 'delete', 'separator','move_watched'],
     dl = ['refresh','separator', 'delete'],
     up = ['refresh','separator', 'delete'],
@@ -272,7 +273,7 @@ def get_torrent_info(init_data, path):
         priority="priority",           
         __params__  = dict(
             style = 'movie_row',
-#            uid = path,
+            uid = path,
         )        
     )
     
@@ -327,7 +328,7 @@ def files_listing():
     title = request.args.get('title') 
     
     dirs = []
-    menu_options = []
+    menu_options = ['delete']
     
     if filter in ['movies', 'all']:
         if type == 'all':
@@ -359,18 +360,16 @@ def files_listing():
             data.append(row)
                             
     return beans.Composite(
-#        beans.HackScriptButton(
-#            script = """
-#                $('.x-tool-down').click();                
-#                $('.x-grid3-row-expander').click();
-#                                                    
-#            """,
-#            label = 'Rozwiń',            
-#        ),
-        beans.Listing(
-             heading = title,
-#             paging = True,
-#             paging_url = '/aaaaaaaaa',         
+        beans.HackScriptButton(
+            script = """
+                $('.x-tool-down').click();                
+                $('.x-grid3-row-expander').click();
+                                                    
+            """,
+            label = 'toggle',            
+        ),
+        beans.Listing(                      
+             heading = title,   
              menu_url = '/files/get_context_menu?items=%s' % ','.join(menu_options),
              autoexpand_column = "title",
              param_name = 'uid',
@@ -468,8 +467,7 @@ def get_context_menu():
     Options are given in URL param. 
     """
     arg_options = request.args['items'].split(',')     
-    menu_options = []
-    
+    menu_options = []    
 
     for name, option in deepcopy(MENU_OPTIONS):
         if name in arg_options:
