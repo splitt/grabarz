@@ -21,9 +21,7 @@ PROTECTING_TIME = timedelta(seconds = 30)
 def start_cron():    
     p = Process(target = cron)
     p.start()
-
         
-#@system.route('/system/cron-process')
 def cron():
     cron_db_session.query(models.Task).delete()
     cron_db_session.commit()            
@@ -52,22 +50,6 @@ def cron():
                 
         time.sleep(0.5)
 
-
-
-#@system.route('/system/add_fake_torrent')    
-#def add_fake_torrent():
-#    """ Process emulates rtorrent behaviur which allows easly debugging all 
-#    system"""
-#    
-##    #: Make contener directory for files
-##    full_work_dir = join(app.config['MOVIES_DL_DIR'], title)
-##    
-##    try:    
-##        os.makedirs(full_work_dir)
-##    except OSError:
-##        pass #: Path propably exists     
-    
-    
 
 @system.route('/system/window-torrent-add')
 @common.jsonify
@@ -124,6 +106,15 @@ def fetch_torrent_file():
     )
 
 
+
+#@system.route('/system/create_ini_files')
+#@common.jsonify
+#def create_ini_files():
+#    """ Scan througs all directories and create and udpates grabarz.ini files"""
+    
+    
+    
+    
 
 
 

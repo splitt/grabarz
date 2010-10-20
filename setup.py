@@ -13,10 +13,11 @@ setup(
         'dateutils',
         'decorator',
         'simplejson',
-	    'imdbpy',
+	'imdbpy',
         'pynav',
-	    'tornado',
-	    'blinker',
+	'tornado',
+	'blinker',
         'mechanoid',
+	'pyrocore',
     ]
 )

@@ -1,8 +1,16 @@
 ## -*- coding: utf-8 -*-
+from __future__ import with_statement
+
+import os, logging
+from os.path import split, join, getsize
+import zipfile
 import unittest
+import difflib
 import urllib, urllib2
 from lxml import html
+from copy import copy
 
+import mechanize
 from grabarz import app
 
 SEED_LIMIT = 20
@@ -17,6 +25,11 @@ class ParseError(IOError):
 
     def __str__(self):
         return '<urlopen error %s>' % self.reason
+    
+    
+#===============================================================================
+# TORRENT SITE ROBOTS
+#===============================================================================
 
 class TorrentSiteRobot(object):
     """ Abstract class to scrapping information from HTML site """        
@@ -88,6 +101,68 @@ class PirateBuyRobot(TorrentSiteRobot):
         return self.base_url % (self.query, self.current_page)
     
     
+#===============================================================================
+# SUBTITLE DOWNLOADERS
+#===============================================================================
+
+def getsub_napisy24(path_to_file):
+    #: get file size and name
+    size = getsize(path_to_file)
+    folder, filename = split(path_to_file)
+    
+    br = mechanize.Browser()    
+    
+    #: login    
+    br.open('http://napisy24.pl/logowanie')
+    br.select_form(nr=1)
+    br['form_logowanieMail'] = 'splittor@tlen.pl'
+    br['form_logowanieHaslo'] = 'zajonez'
+    br.submit()    
+         
+    #: advenced search by file size    
+    br.open('http://napisy24.pl/szukaj/zaawansowane/')
+    
+    #advanced search
+    br.select_form(nr = 1)    
+    br['form_szukajAdvRozmiar'] = str(size)    
+    response = br.submit().read()
+    page = html.fromstring(response)
+    rows = page.xpath('//div[@class="fullWhiteBox"][2]//div[@id="defaultTable"]//tr')
+    if not rows:
+        return False
+    
+    _extract = lambda x: ''.join(copy(x).xpath('//strong/text()'))
+        
+    titles = [_extract(x) for x in rows[1::2]]
+    matches = difflib.get_close_matches(filename, titles)
+    
+    if not matches:
+        return False
+            
+    selected = [(_extract(x), y) for x, y in zip(rows[1::2],rows[2::2]) 
+                        if _extract(x) == matches[0]][0][1]    
+    
+    href = copy(selected).xpath('//a')[0].attrib['href']
+    link = br.find_link(url_regex=href)
+    zip_data = br.follow_link(link).read()
+    zip_file_path = join(folder, 'napisy24sub.zip')
+    with open(zip_file_path,'w') as zip_file:
+        zip_file.write(zip_data)
+        
+    #: extracting
+    z = zipfile.ZipFile(zip_file_path, mode='r')
+    name = z.namelist()[0]
+    z.extractall(folder)
+    z.close()
+    os.rename(join(folder, name), join(folder, split(filename)[0]+'_n24.txt'))
+    #: removing all zip
+    os.remove(zip_file_path)
+    
+    logging.debug('Succesfully download and unzipped n24 '
+                  'subtitles for item: %s'% filename)    
+    return True
+
+    
 class FlaskrTestCase(unittest.TestCase):
 
     def test_btjunkie(self):        
@@ -96,5 +171,6 @@ class FlaskrTestCase(unittest.TestCase):
         print result
                         
 if __name__ == '__main__':
-    unittest.main()
+    getsub_napisy24('/home/mzajonz/movies/The.Vampire.Diaries.S02E03.Bad.Moon.Rising.HDTV.XviD-FQM.avi')
+#    unittest.main()
     

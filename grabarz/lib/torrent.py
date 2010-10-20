@@ -1,9 +1,29 @@
 ## -*- coding: utf-8 -*-
-
 import urllib
 import re
 
+import pyrocore
+from pyrocore.torrent import rtorrent
+from grabarz import app
+
 MB = 1024
+
+def connect_rtorrent_api():
+    """ Make connection to rotrrent via pyrocore library """
+    
+    #: monkey patch some config params
+    pyrocore.config.rtorrent_rc = app.config['RTORRENT_CFG']
+    pyrocore.config.xmlrpc = {}
+    pyrocore.config.traits_by_alias = {
+        'Debian'      : 'linux',
+        'jamendo.com' : 'audio',
+        }
+
+    app.rtorrent = rtorrent.RtorrentEngine()
+
+    # make connection at start
+    app.rtorrent.open()
+
 
 def tokenize(text, match=re.compile("([idel])|(\d+):|(-?\d+)").match):
     i = 0
@@ -55,7 +75,3 @@ def get_torrent_data(src):
 
     data = urllib.urlopen(src).read()
     return decode(data)
-#    movie_files = ["/".join(file["path"]) for file in torrent["info"]["files"] 
-#                   if file['length'] > 300*MB]        
-#        
-#    return movie_files

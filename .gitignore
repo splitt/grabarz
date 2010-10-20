@@ -1,9 +1,11 @@
 /env
 /Grabarz.egg-info
 /var
-.settings
-.project
-.pydevproject
 __instance__.txt
 /db
 /env
+.project
+.pydevproject
+.settings/*
+*.py*
+pip-log.txt

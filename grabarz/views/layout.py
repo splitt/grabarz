@@ -359,7 +359,7 @@ def center():
              scroll='AUTO',
              split = True,
              link = beans.Link(
-                url='/files/files_listing?filter=all&type=all',
+             url = '/files/files_listing?filter=all&type=all&title=All files',
              ),                          
          ),
          
@@ -377,7 +377,6 @@ def center():
                 url='/layout/tools',
              ),     
          )               
-                                
     )
     
 
@@ -406,7 +405,7 @@ def tools():
             beans.Tab(
                 id = 'movies-downloading',
                 url = '/layout/null',
-                title = 'Tracker info',
+                title = 'Torrent info',
                 params = dict(
                   icon = 'icon-information',            
                 ),                    
@@ -448,13 +447,32 @@ def bottom():
 
 @layout.route('/layout/init')
 @common.jsonify
-def init():            
+def init():
+    import pdbpp;pdbpp.set_trace()
+    
+    #: hack = appending jQuery            
+#    chrome_shell.inject_js("""
+#    var fileref=document.createElement('script');
+#    fileref.setAttribute('type','text/javascript');
+#    fileref.setAttribute('src', 'http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js');
+#    document.getElementsByTagName('head')[0].appendChild(fileref);
+#    
+#    window.setTimeout(function(){
+#        $('.x-grid3-body:first .x-grid3-row:first').addClass('x-grid3-row-over');
+#    },300);
+#    """)
+    
+    if app.config.get('DISABLE_REFRESH'):
+        return beans.Null()
+        
     return beans.TimerRegister(
         name = 'messages',
         action = '/layout/null',
         interval =  app.config['UPDATE_INTERVAL'],
         slot = 'internal',                        
     )
+    
+    
     
     
 @layout.route('/layout/not-implemented', methods = ['GET', 'POST'])

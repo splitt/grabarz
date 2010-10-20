@@ -245,7 +245,7 @@ def feed_movie():
         common.reload_slot('@center', method = 'sql')
         
     #: Dumps data to ini file
-    config = ConfigParser.RawConfigParser()    
+    config = ConfigParser.RawConfigParser()
     config.add_section('data')
     for k, v in data.items():
         val = unicode(v).encode('utf-8')
@@ -344,7 +344,7 @@ def files_listing():
     data = []
     paths = [app.config[dir] for dir in dirs]        
     config = ConfigParser.RawConfigParser()
-    
+        
     for path in paths:
         #: Extract data from ini files
         for dir in os.listdir(path):                            
